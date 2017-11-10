@@ -1,4 +1,9 @@
-lib/
+lib/*.class
+lib/easyccg
+lib/stanford-parser
+lib/stanford-tagger
 data/
 __pycache__
 .idea
+preprocessed/
+*.pyc

@@ -7,7 +7,6 @@ Downloads the following:
 """
 
 from __future__ import print_function
-import urllib2
 import sys
 import os
 import shutil
@@ -119,42 +118,29 @@ def download_wordvecs(dirpath):
     url = 'http://nlp.stanford.edu/data/glove.840B.300d.zip'
     unzip(download(url, dirpath))
 
-def download_sick(dirpath):
-    if os.path.exists(dirpath):
-        print('Found SICK dataset - skip')
-        return
-    else:
-        os.makedirs(dirpath)
-    train_url = 'http://alt.qcri.org/semeval2014/task1/data/uploads/sick_train.zip'
-    trial_url = 'http://alt.qcri.org/semeval2014/task1/data/uploads/sick_trial.zip'
-    test_url = 'http://alt.qcri.org/semeval2014/task1/data/uploads/sick_test_annotated.zip'
-    unzip(download(train_url, dirpath))
-    unzip(download(trial_url, dirpath))
-    unzip(download(test_url, dirpath))
-
 def download_django(dirpath):
     if os.path.exists(dirpath + '/en-django'):
         print('Found django dataset - skip')
         return
 
     url = 'http://ahclab.naist.jp/pseudogen/en-django.tar.gz'
-    filename = unzip(download(url, dirpath))
+    filename = download(url, dirpath)
     untargz(filename)
 
-def download_bs(data_dir):
-    if os.path.exists(data_dir + "/code-docstring-corpus"):
+def download_bs(dirname):
+    if os.path.exists(dirname):
         print('Found BS dataset - skip')
         return
 
-    cmd = ('git clone https://github.com/EdinburghNLP/code-docstring-corpus %s' % data_dir)
+    cmd = ('git clone https://github.com/EdinburghNLP/code-docstring-corpus %s' % dirname)
     os.system(cmd)
 
-def download_hs(data_dir):
-    if os.path.exists(data_dir + '/card2code'):
+def download_hs(dirname):
+    if os.path.exists(dirname):
         print('Found HS dataset - skip')
         return
 
-    cmd = ('git clone https://github.com/deepmind/card2code %s' % data_dir)
+    cmd = ('git clone https://github.com/deepmind/card2code %s' % dirname)
     os.system(cmd)
 
 
@@ -163,7 +149,11 @@ if __name__ == '__main__':
 
     # data
     data_dir = os.path.join(base_dir, 'data')
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
     wordvec_dir = os.path.join(data_dir, 'glove')
+    if not os.path.exists(wordvec_dir):
+        os.makedirs(wordvec_dir)
 
     # libraries
     lib_dir = os.path.join(base_dir, 'lib')
@@ -175,8 +165,6 @@ if __name__ == '__main__':
     download_wordvecs(wordvec_dir)
 
     # download data
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-    download_hs(data_dir)
-    download_bs(data_dir)
+    download_hs(data_dir + '/card2code')
+    download_bs(data_dir + '/code-docstring-corpus')
     download_django(data_dir)
