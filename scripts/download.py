@@ -3,13 +3,13 @@ import sys
 import os
 import zipfile
 import tarfile
-import urllib.request
+import requests
 
 def download(url, dirpath):
     filename = url.split('/')[-1]
     filepath = os.path.join(dirpath, filename)
     try:
-        u = urllib.request.urlopen(url)
+        u = requests.get(url)
     except:
         print("URL %s failed to open" %url)
         raise Exception
@@ -26,10 +26,8 @@ def download(url, dirpath):
     print("Downloading: %s Bytes: %s" % (filename, filesize))
 
     downloaded = 0
-    block_sz = 8192
     status_width = 70
-    while True:
-        buf = u.read(block_sz)
+    for buf in u.req.iter_content(100000):
         if not buf:
             print('')
             break
