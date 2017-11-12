@@ -3,13 +3,13 @@ import sys
 import os
 import zipfile
 import tarfile
-import urllib3
+import urllib.request
 
 def download(url, dirpath):
     filename = url.split('/')[-1]
     filepath = os.path.join(dirpath, filename)
     try:
-        u = urllib3.urlopen(url)
+        u = urllib.request.urlopen(url)
     except:
         print("URL %s failed to open" %url)
         raise Exception
