@@ -6,7 +6,7 @@ base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 lib_dir = os.path.join(base_dir, 'lib')
 data_dir = os.path.join(base_dir, 'data')
 
-classpath = ';'.join([
+classpath = ':'.join([
         lib_dir,
         os.path.join(lib_dir, 'stanford-parser\stanford-parser.jar'),
         os.path.join(lib_dir, 'stanford-parser\stanford-parser-3.5.1-models.jar'),
