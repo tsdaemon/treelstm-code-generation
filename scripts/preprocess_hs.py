@@ -83,19 +83,16 @@ if __name__ == '__main__':
     shutil.copy(os.path.join(hs_source_dir, 'test_hs.out'), os.path.join(test_dir, 'test.out'))
 
     print('Splitting dataset')
-    print('=' * 80)
     split_input(os.path.join(dev_dir, 'dev.in'))
     split_input(os.path.join(train_dir, 'train.in'))
     split_input(os.path.join(test_dir, 'test.in'))
 
     print('Tokenizing')
-    print('=' * 80)
     tokenize(os.path.join(dev_dir, 'dev.in.description'))
     tokenize(os.path.join(train_dir, 'train.in.description'))
     tokenize(os.path.join(test_dir, 'test.in.description'))
 
     print('Building vocabulary')
-    print('=' * 80)
     vocab = build_vocab(glob.glob(os.path.join(hs_dir, '*\\*.tokens')))
     vocab_glove = get_glove_vocab().getSet()
     vocab_unk = vocab - vocab_glove
@@ -105,13 +102,11 @@ if __name__ == '__main__':
     save_vocab(os.path.join(hs_dir, 'vocab.unk.txt'), vocab_unk)
 
     print('Parsing descriptions for variables')
-    print('=' * 80)
     parse_for_variables(os.path.join(dev_dir, 'dev.in.tokens'), vocab_unk)
     parse_for_variables(os.path.join(train_dir, 'train.in.tokens'), vocab_unk)
     parse_for_variables(os.path.join(test_dir, 'test.in.tokens'), vocab_unk)
 
     print('Parsing descriptions trees')
-    print('=' * 80)
     parse(os.path.join(dev_dir, 'dev.in.tokens'), os.path.join(hs_dir, 'vocab.unk.txt'))
     parse(os.path.join(train_dir, 'train.in.tokens'), os.path.join(hs_dir, 'vocab.unk.txt'))
     parse(os.path.join(test_dir, 'test.in.tokens'), os.path.join(hs_dir, 'vocab.unk.txt'))
