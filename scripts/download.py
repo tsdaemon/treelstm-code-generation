@@ -1,23 +1,15 @@
-"""
-Downloads the following:
-- Stanford parser
-- Stanford POS tagger
-- Glove vectors
-- SICK dataset (semantic relatedness task)
-"""
-
 from __future__ import print_function
 import sys
 import os
-import shutil
 import zipfile
 import tarfile
+import urllib3
 
 def download(url, dirpath):
     filename = url.split('/')[-1]
     filepath = os.path.join(dirpath, filename)
     try:
-        u = urllib2.urlopen(url)
+        u = urllib3.urlopen(url)
     except:
         print("URL %s failed to open" %url)
         raise Exception
