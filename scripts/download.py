@@ -18,15 +18,8 @@ def download(url, dirpath):
     except:
         print("Cannot write %s" %filepath)
         raise Exception
-    try:
-        filesize = int(u.info().getheaders("Content-Length")[0])
-    except:
-        print("URL %s failed to report length" %url)
-        raise Exception
-    print("Downloading: %s Bytes: %s" % (filename, filesize))
 
     downloaded = 0
-    status_width = 70
     for buf in u.req.iter_content(100000):
         if not buf:
             print('')
@@ -35,10 +28,6 @@ def download(url, dirpath):
             print('', end='\r')
         downloaded += len(buf)
         f.write(buf)
-        status = (("[%-" + str(status_width + 1) + "s] %3.2f%%") %
-            ('=' * int(float(downloaded) / filesize * status_width) + '>', downloaded * 100. / filesize))
-        print(status, end='')
-        sys.stdout.flush()
     f.close()
     return filepath
 
