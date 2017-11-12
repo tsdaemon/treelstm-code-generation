@@ -20,7 +20,7 @@ def download(url, dirpath):
         raise Exception
 
     downloaded = 0
-    for buf in u.req.iter_content(100000):
+    for buf in u.iter_content(100000):
         if not buf:
             print('')
             break
