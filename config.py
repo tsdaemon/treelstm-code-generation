@@ -2,7 +2,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-random_seed', default=181783, type=int)
-parser.add_argument('-output_dir', default='.outputs')
+parser.add_argument('-output_dir', default='checkpoints')
 
 # model's main configuration
 parser.add_argument('-data_type', default='django', choices=['django', 'hs', 'bs'])
