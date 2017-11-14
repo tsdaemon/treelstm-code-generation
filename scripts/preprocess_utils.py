@@ -1,7 +1,7 @@
 import os
 import re
 import platform
-
+from tqdm import tqdm
 
 base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 lib_dir = os.path.join(base_dir, 'lib')
@@ -22,19 +22,32 @@ def make_dirs(dirs):
             os.makedirs(d)
 
 
-def build_vocab(filepaths):
+def build_vocab_from_token_files(filepaths, lower=True):
     vocab = set()
-    for filepath in filepaths:
+    print('Building vocabulary from token files...')
+    for filepath in tqdm(filepaths):
         with open(filepath) as f:
             for line in f:
-                line = line.lower()
+                if lower:
+                    line = line.lower()
                 vocab |= set(line.split())
     return vocab
 
 
+def build_vocab_from_items(items, lower=True):
+    vocab = set()
+    print('Building vocabulary from items...')
+    for item in tqdm(items):
+        if lower:
+            item = item.lower()
+        vocab |= {item}
+    return vocab
+
+
 def save_vocab(destination, vocab):
+    print('Writing vocabulary: ' + destination)
     with open(destination, 'w') as f:
-        for w in sorted(vocab):
+        for w in tqdm(sorted(vocab)):
             f.write(w + '\n')
 
 
@@ -50,7 +63,7 @@ def move_numbers_from_known(vocab, vocab_unk):
 
 
 def tokenize(filepath):
-    print('\nTokenizing ' + filepath)
+    print('Tokenizing ' + filepath)
     dirpath = os.path.dirname(filepath)
     filepre = os.path.splitext(os.path.basename(filepath))[0]
     tokpath = os.path.join(dirpath, filepre + '.tokens')
@@ -60,7 +73,7 @@ def tokenize(filepath):
 
 
 def parse_for_variables(filepath, vocab_unk):
-    print('\nParsing variables ' + filepath)
+    print('Parsing variables ' + filepath)
     dirpath = os.path.dirname(filepath)
     filepre = os.path.splitext(os.path.basename(filepath))[0]
     varpath = os.path.join(dirpath, filepre + '.variables')
@@ -74,7 +87,7 @@ def parse_for_variables(filepath, vocab_unk):
 
 
 def dependency_parse(filepath, vocabpath):
-    print('\nDependency parsing ' + filepath)
+    print('Dependency parsing ' + filepath)
     dirpath = os.path.dirname(filepath)
     filepre = os.path.splitext(os.path.basename(filepath))[0]
     parentpath = os.path.join(dirpath, filepre + '.dependency_parents')
@@ -85,7 +98,7 @@ def dependency_parse(filepath, vocabpath):
 
 
 def constituency_parse(filepath, vocabpath):
-    print('\nConstituency parsing ' + filepath)
+    print('Constituency parsing ' + filepath)
     dirpath = os.path.dirname(filepath)
     filepre = os.path.splitext(os.path.basename(filepath))[0]
     parentpath = os.path.join(dirpath, filepre + '.constituency_parents')
@@ -95,7 +108,7 @@ def constituency_parse(filepath, vocabpath):
 
 
 def ccg_parse(filepath, vocabpath):
-    print('\nCCG parsing ' + filepath)
+    print('CCG parsing ' + filepath)
     dirpath = os.path.dirname(filepath)
     filepre = os.path.splitext(os.path.basename(filepath))[0]
     parentpath = os.path.join(dirpath, filepre + '.ccg_parents')

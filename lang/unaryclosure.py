@@ -3,7 +3,7 @@ from collections import Counter
 import re
 
 from lang.astnode import ASTNode
-from lang.grammar3 import type_str_to_type
+from lang.grammar import type_str_to_type
 
 
 def extract_unary_closure_helper(parse_tree, unary_link, last_node):

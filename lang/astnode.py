@@ -243,14 +243,6 @@ class ASTNode(object):
         return rule_list, rule_parents
 
     def copy(self):
-        # if not hasattr(self, '_dump'):
-        #     dump = cPickle.dumps(self, -1)
-        #     setattr(self, '_dump', dump)
-        #
-        #     return cPickle.loads(dump)
-        #
-        # return cPickle.loads(self._dump)
-
         new_tree = ASTNode(self.type, self.label, self.value)
         if self.is_leaf:
             return new_tree

@@ -7,8 +7,10 @@ from tqdm import tqdm
 
 from datasets.hs import named_variables
 from scripts.preprocess_utils import *
-from containers.vocab import get_glove_vocab
-from lang.parse import parse_code, parse_tree_to_python_ast, get_grammar
+from natural_lang.vocab import get_glove_vocab
+from lang.parse import *
+from utils.io import serialize_to_file
+from lang.unaryclosure import apply_unary_closures, get_top_unary_closures
 
 
 position_symbols = ["NAME_END",
@@ -33,9 +35,9 @@ def extract_from_hs_line(line, end_symbol, start_pos=None):
 
 
 def tranform_description(desc):
-   if desc == "NIL\n":
+    if desc == "NIL\n":
         return "\n"
-   return re.sub(r"<[^>]*>", "", desc)
+    return re.sub(r"<[^>]*>", "", desc)
 
 
 def split_input(filepath):
@@ -60,13 +62,17 @@ def split_input(filepath):
     df.to_csv(os.path.join(dst_dir, filepath + '.named_vars'))
 
 
-def parse_code_trees(code_file, output_file):
+def parse_code_trees(code_file, code_out_file):
     parse_trees = []
+    codes = []
     rule_num = 0.
     example_num = 0
     for line in tqdm(open(code_file).readlines()):
         code = line.replace('В§', '\n').replace('    ', '\t')
-        p_tree = parse_code(code)
+        code = canonicalize_code(code)
+        codes.append(code)
+
+        p_tree = parse_raw(code)
         # sanity check
         pred_ast = parse_tree_to_python_ast(p_tree)
         pred_code = astor.to_source(pred_ast)
@@ -82,9 +88,7 @@ def parse_code_trees(code_file, output_file):
 
         parse_trees.append(p_tree)
 
-    with open(output_file, 'w') as f:
-        for tree in parse_trees:
-            f.write(tree.__repr__() + '\n')
+    serialize_to_file(codes, code_out_file)
 
     print('Avg. nums of rules: %f' % (rule_num / example_num))
     return parse_trees
@@ -93,11 +97,45 @@ def parse_code_trees(code_file, output_file):
 def write_grammar(parse_trees, out_file):
     grammar = get_grammar(parse_trees)
 
+    serialize_to_file(grammar, out_file + '.bin')
     with open(out_file, 'w') as f:
         for rule in tqdm(grammar):
             str = rule.__repr__()
             f.write(str + '\n')
+
     return grammar
+
+
+def write_terminal_tokens_vocab(grammar, parse_trees, out_file):
+    terminal_token_seq = []
+
+    for parse_tree in tqdm(parse_trees):
+        for node in parse_tree.get_leaves():
+            if grammar.is_value_node(node):
+                terminal_val = node.value
+                terminal_str = str(terminal_val)
+
+                terminal_tokens = get_terminal_tokens(terminal_str)
+
+                for terminal_token in terminal_tokens:
+                    terminal_token_seq.append(terminal_token)
+
+    terminal_vocab = build_vocab_from_items(terminal_token_seq, False)
+    save_vocab(out_file, terminal_vocab)
+
+
+def do_unary_closures(parse_trees):
+    unary_closures = get_top_unary_closures(parse_trees, k=20)
+    for parse_tree in tqdm(parse_trees):
+        apply_unary_closures(parse_tree, unary_closures)
+
+
+def write_trees(parse_trees, out_file):
+    # save data
+    with open(out_file, 'w') as f:
+        for tree in tqdm(parse_trees):
+            f.write(tree.__repr__() + '\n')
+    serialize_to_file(parse_trees, out_file + '.bin')
 
 
 if __name__ == '__main__':
@@ -137,7 +175,7 @@ if __name__ == '__main__':
     # tokenize(os.path.join(test_dir, 'test.in.description'))
     #
     # print('Building vocabulary')
-    # vocab = build_vocab(glob.glob(os.path.join(hs_dir, '*/*.tokens')))
+    # vocab = build_vocab_from_token_files(glob.glob(os.path.join(hs_dir, '*/*.tokens')))
     # vocab_glove = get_glove_vocab().getSet()
     # vocab_unk = vocab - vocab_glove
     # vocab = vocab - vocab_unk
@@ -156,9 +194,22 @@ if __name__ == '__main__':
     # parse(os.path.join(test_dir, 'test.in.tokens'), os.path.join(hs_dir, 'vocab.unk.txt'))
 
     print('Parsing output code')
-    parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'), os.path.join(dev_dir, 'dev.out.trees'))
-    parse_trees_train = parse_code_trees(os.path.join(train_dir, 'train.out'), os.path.join(train_dir, 'train.out.trees'))
-    parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'), os.path.join(test_dir, 'test.out.trees'))
+    parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'), os.path.join(dev_dir, 'dev.out.bin'))
+    parse_trees_train = parse_code_trees(os.path.join(train_dir, 'train.out'), os.path.join(dev_dir, 'train.out.bin'))
+    parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'), os.path.join(dev_dir, 'test.out.bin'))
+    parse_trees = parse_trees_dev+parse_trees_train+parse_trees_test
 
-    write_grammar(parse_trees_dev+parse_trees_train+parse_trees_test, os.path.join(hs_dir, 'grammar.txt'))
+    print('Applying unary closures')
+    do_unary_closures(parse_trees)
+
+    print('Saving trees')
+    write_trees(parse_trees_dev, os.path.join(dev_dir, 'dev.out.trees'))
+    write_trees(parse_trees_train, os.path.join(train_dir, 'train.out.trees'))
+    write_trees(parse_trees_test, os.path.join(test_dir, 'test.out.trees'))
+
+    print('Creating grammar')
+    grammar = write_grammar(parse_trees, os.path.join(hs_dir, 'grammar.txt'))
+
+    print('Creating terminal vocabulary')
+    write_terminal_tokens_vocab(grammar, parse_trees, os.path.join(hs_dir, 'terminal_vocab.txt'))
 

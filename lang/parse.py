@@ -4,9 +4,11 @@ import re
 import token as tk
 from io import StringIO
 from tokenize import generate_tokens
+from tqdm import tqdm
 
 from lang.astnode import ASTNode
-from lang.grammar3 import is_compositional_leaf, PY_AST_NODE_FIELDS, NODE_FIELD_BLACK_LIST, PythonGrammar
+from lang.grammar import is_compositional_leaf, NODE_FIELD_BLACK_LIST, PythonGrammar
+from lang.grammar3 import PY_AST_NODE_FIELDS
 from lang.util import typename
 from lang.unaryclosure import compressed_ast_to_normal
 from utils.general import init_logging
@@ -270,7 +272,6 @@ def parse_code(code):
 def parse_raw(code):
     py_ast = ast.parse(code)
 
-    # tree = python_ast_to_parse_tree(py_ast.body[0])
     tree = python_ast_to_parse_tree(py_ast.body[0])
 
     tree = add_root(tree)
@@ -280,9 +281,9 @@ def parse_raw(code):
 
 def get_grammar(parse_trees):
     rules = set()
-    # rule_num_dist = defaultdict(int)
 
-    for parse_tree in parse_trees:
+    print("Generating grammar from parse trees...")
+    for parse_tree in tqdm(parse_trees):
         parse_tree_rules, rule_parents = parse_tree.get_productions()
         for rule in parse_tree_rules:
             rules.add(rule)
@@ -340,6 +341,22 @@ def tokenize_code_adv(code, breakCamelStr=False):
             tokens.append(quote)
 
     return tokens
+
+
+def get_terminal_tokens(_terminal_str):
+        """
+        get terminal tokens
+        break words like MinionCards into [Minion, Cards]
+        """
+        tmp_terminal_tokens = [t for t in _terminal_str.split(' ') if len(t) > 0]
+        _terminal_tokens = []
+        for token in tmp_terminal_tokens:
+            sub_tokens = re.sub(r'([a-z])([A-Z])', r'\1 \2', token).split(' ')
+            _terminal_tokens.extend(sub_tokens)
+
+            _terminal_tokens.append(' ')
+
+        return _terminal_tokens[:-1]
 
 
 if __name__ == '__main__':
