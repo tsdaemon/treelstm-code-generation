@@ -41,6 +41,17 @@ class Dataset(data.Dataset):
         code = deepcopy(self.codes[index])
         return enc_tree, dec_tree, input, code
 
+    def load_input(self, data_dir, file_name, syntax):
+        parents_file = os.path.join(data_dir, '{}.in.{}_parents'.format(file_name, parents_prefix[syntax]))
+        tokens_file = os.path.join(data_dir, '{}.in.tokens'.format(file_name))
+
+        print('Reading query trees...')
+        self.query_trees = self.read_query_trees(parents_file)
+
+        print('Reading query tokens...')
+        self.query, self.query_tokens = self.read_query(tokens_file)
+        self.query = self.fill_pads(self.query, self.query_trees)
+
     def read_query(self, filename):
         with open(filename, 'r') as f:
             input_and_tokens = [self.read_query_line(line) for line in tqdm(f.readlines())]
@@ -55,7 +66,10 @@ class Dataset(data.Dataset):
     def fill_pads(self, sentences, trees):
         ls = []
         for sentence, tree in zip(sentences, trees):
-            ls.append(self.fill_pad(sentence, tree))
+            if tree is None:
+                ls.append(sentence)
+            else:
+                ls.append(self.fill_pad(sentence, tree))
         return ls
 
     def fill_pad(self, sentence, tree):
@@ -85,7 +99,7 @@ class Dataset(data.Dataset):
                     if parent == -1:
                         break
                     tree = Tree()
-                    data.append(tree)
+                    d.append(tree)
                     if prev is not None:
                         tree.add_child(prev)
                     trees[idx-1] = tree
@@ -99,7 +113,8 @@ class Dataset(data.Dataset):
                     else:
                         prev = tree
                         idx = parent
-        root._data = d
+        if root is not None:
+            root._data = d
         return root
 
     def load_output(self, data_dir, file_name):
@@ -144,7 +159,7 @@ class Dataset(data.Dataset):
                     terminal_tokens = get_terminal_tokens(terminal_str)
 
                     for terminal_token in terminal_tokens:
-                        term_tok_id = self.terminal_vocab[terminal_token]
+                        term_tok_id = self.terminal_vocab.getIndex(terminal_token, Constants.UNK)
                         tok_src_idx = -1
                         try:
                             tok_src_idx = query_tokens.index(terminal_token)
@@ -157,10 +172,6 @@ class Dataset(data.Dataset):
                         # could be unk!
                         if tok_src_idx < 0 or tok_src_idx >= self.config.max_query_length:
                             action = Action(GEN_TOKEN, d)
-                            if terminal_token not in self.terminal_vocab:
-                                if terminal_token not in query_tokens:
-                                    # print terminal_token
-                                    can_fully_reconstructed = False
                         else:  # copy
                             if term_tok_id != Constants.UNK:
                                 d['source_idx'] = tok_src_idx
@@ -181,10 +192,9 @@ class Dataset(data.Dataset):
         return len(self.actions)
 
     def init_data_matrices(self):
-        max_query_length = self.config.max_query_length
         max_example_action_num = self.config.max_example_action_num
-        annot_vocab = self.vocab
         terminal_vocab = self.terminal_vocab
+        self.data_matrix = {}
 
         print('Initializing data matrices...')
         tgt_node_seq = self.data_matrix['tgt_node_seq'] = np.zeros((self.size, max_example_action_num), dtype='int32')
@@ -205,7 +215,7 @@ class Dataset(data.Dataset):
                     tgt_action_seq_type[eid, t, 0] = 1
                 elif action.act_type == GEN_TOKEN:
                     token = action.data['literal']
-                    token_id = terminal_vocab[token]
+                    token_id = terminal_vocab.getIndex(token, Constants.UNK)
                     tgt_action_seq[eid, t, 1] = token_id
                     tgt_action_seq_type[eid, t, 1] = 1
                 elif action.act_type == COPY_TOKEN:
@@ -214,7 +224,7 @@ class Dataset(data.Dataset):
                     tgt_action_seq_type[eid, t, 2] = 1
                 elif action.act_type == GEN_COPY_TOKEN:
                     token = action.data['literal']
-                    token_id = terminal_vocab[token]
+                    token_id = terminal_vocab.getIndex(token, Constants.UNK)
                     tgt_action_seq[eid, t, 1] = token_id
                     tgt_action_seq_type[eid, t, 1] = 1
 

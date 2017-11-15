@@ -1,11 +1,12 @@
 import argparse
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-data_dir', default='./preprocessed')
 parser.add_argument('-random_seed', default=181783, type=int)
 parser.add_argument('-output_dir', default='checkpoints')
 
 # model's main configuration
-parser.add_argument('-data_type', default='django', choices=['django', 'hs', 'bs'])
+parser.add_argument('-dataset', default='django', choices=['django', 'hs', 'bs'])
 
 # neural model's parameters
 parser.add_argument('-source_vocab_size', default=0, type=int)
@@ -51,14 +52,12 @@ parser.add_argument('-optimizer', default='adam')
 parser.add_argument('-clip_grad', default=0., type=float)
 parser.add_argument('-train_patience', default=10, type=int)
 parser.add_argument('-max_epoch', default=50, type=int)
-parser.add_argument('-batch_size', default=10, type=int)
-parser.add_argument('-valid_per_batch', default=4000, type=int)
-parser.add_argument('-save_per_batch', default=4000, type=int)
 parser.add_argument('-valid_metric', default='bleu')
 
 # decoding
 parser.add_argument('-beam_size', default=15, type=int)
 parser.add_argument('-max_query_length', default=70, type=int)
+parser.add_argument('-max_example_action_num', default=200, type=int)
 parser.add_argument('-decode_max_time_step', default=100, type=int)
 parser.add_argument('-head_nt_constraint', dest='head_nt_constraint', action='store_true')
 parser.add_argument('-no_head_nt_constraint', dest='head_nt_constraint', action='store_false')

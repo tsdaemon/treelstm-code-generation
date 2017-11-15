@@ -46,7 +46,7 @@ def build_vocab_from_items(items, lower=True):
 
 def save_vocab(destination, vocab):
     print('Writing vocabulary: ' + destination)
-    with open(destination, 'w') as f:
+    with open(destination, 'w', encoding='utf-8') as f:
         for w in tqdm(sorted(vocab)):
             f.write(w + '\n')
 

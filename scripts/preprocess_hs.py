@@ -1,17 +1,14 @@
 import shutil
-import pandas as pd
 import glob
-import ast
 import astor
 from tqdm import tqdm
+from functools import reduce
 
-from datasets.hs import named_variables
 from scripts.preprocess_utils import *
 from natural_lang.vocab import get_glove_vocab
 from lang.parse import *
 from utils.io import serialize_to_file
 from lang.unaryclosure import apply_unary_closures, get_top_unary_closures
-
 
 position_symbols = ["NAME_END",
                     "ATK_END",
@@ -22,6 +19,8 @@ position_symbols = ["NAME_END",
                     "PLAYER_CLS_END",
                     "RACE_END",
                     "RARITY_END"]
+
+names = ['Name', 'attack', 'defence', 'cost', 'duration', 'type', 'player class', 'race', 'rarity']
 
 
 def extract_from_hs_line(line, end_symbol, start_pos=None):
@@ -34,16 +33,20 @@ def extract_from_hs_line(line, end_symbol, start_pos=None):
     return result, new_pos
 
 
-def tranform_description(desc):
+def tranform_description(vars, desc):
+    vars_desc = map(lambda t: '{}: {}'.format(t[0], t[1]), zip(names, vars))
+    vars_line = reduce(lambda v1, v2: '{}, {}'.format(v1, v2), vars_desc) + "."
+
     if desc == "NIL\n":
-        return "\n"
+        desc = vars_line + "\n"
+    else:
+        desc = vars_line + " " + desc
     return re.sub(r"<[^>]*>", "", desc)
 
 
 def split_input(filepath):
-    print('\nSplitting input ' + filepath)
+    print('Splitting input ' + filepath)
     dst_dir = os.path.dirname(filepath)
-    df = pd.DataFrame(columns=named_variables)
     with open(filepath, 'r') as datafile, \
          open(os.path.join(dst_dir, filepath + '.description'), 'w') as dfile:
             for line in tqdm(datafile.readlines()):
@@ -54,12 +57,9 @@ def split_input(filepath):
                     if var == "NIL":
                         var = "None"
                     vars.append(var)
-                df.loc[len(df)] = vars
 
-                description = tranform_description(line[position:])
-
+                description = tranform_description(vars, line[position:])
                 dfile.write(description)
-    df.to_csv(os.path.join(dst_dir, filepath + '.named_vars'))
 
 
 def parse_code_trees(code_file, code_out_file):
@@ -143,60 +143,60 @@ if __name__ == '__main__':
     print('Pre-processing HearthStone dataset')
     print('=' * 80)
 
-    hs_source_dir = os.path.join(data_dir, 'card2code\\third_party\\hearthstone/')
-    hs_dir = os.path.join(base_dir, 'preprocessed\\hs')
-    # if not os.path.exists(hs_dir):
-    #     os.makedirs(hs_dir)
-    # else:
-    #     print("Hearthstone folder found. Exiting.")
-    #     exit()
-    #
+    hs_source_dir = os.path.join(data_dir, 'card2code/third_party/hearthstone/')
+    hs_dir = os.path.join(base_dir, 'preprocessed/hs')
+    if not os.path.exists(hs_dir):
+        os.makedirs(hs_dir)
+    else:
+        print("Hearthstone folder found. Exiting.")
+        exit()
+
     train_dir = os.path.join(hs_dir, 'train')
     dev_dir = os.path.join(hs_dir, 'dev')
     test_dir = os.path.join(hs_dir, 'test')
     make_dirs([train_dir, dev_dir, test_dir])
-    #
-    # # copy dataset
-    # shutil.copy(os.path.join(hs_source_dir, 'dev_hs.in'), os.path.join(dev_dir, 'dev.in'))
-    # shutil.copy(os.path.join(hs_source_dir, 'dev_hs.out'), os.path.join(dev_dir, 'dev.out'))
-    # shutil.copy(os.path.join(hs_source_dir, 'train_hs.in'), os.path.join(train_dir, 'train.in'))
-    # shutil.copy(os.path.join(hs_source_dir, 'train_hs.out'), os.path.join(train_dir, 'train.out'))
-    # shutil.copy(os.path.join(hs_source_dir, 'test_hs.in'), os.path.join(test_dir, 'test.in'))
-    # shutil.copy(os.path.join(hs_source_dir, 'test_hs.out'), os.path.join(test_dir, 'test.out'))
-    #
-    # print('Splitting dataset')
-    # split_input(os.path.join(dev_dir, 'dev.in'))
-    # split_input(os.path.join(train_dir, 'train.in'))
-    # split_input(os.path.join(test_dir, 'test.in'))
-    #
-    # print('Tokenizing')
-    # tokenize(os.path.join(dev_dir, 'dev.in.description'))
-    # tokenize(os.path.join(train_dir, 'train.in.description'))
-    # tokenize(os.path.join(test_dir, 'test.in.description'))
-    #
-    # print('Building vocabulary')
-    # vocab = build_vocab_from_token_files(glob.glob(os.path.join(hs_dir, '*/*.tokens')))
-    # vocab_glove = get_glove_vocab().getSet()
-    # vocab_unk = vocab - vocab_glove
-    # vocab = vocab - vocab_unk
-    # vocab, vocab_unk = move_numbers_from_known(vocab, vocab_unk)
-    # save_vocab(os.path.join(hs_dir, 'vocab.txt'), vocab)
-    # save_vocab(os.path.join(hs_dir, 'vocab.unk.txt'), vocab_unk)
-    #
+
+    # copy dataset
+    shutil.copy(os.path.join(hs_source_dir, 'dev_hs.in'), os.path.join(dev_dir, 'dev.in'))
+    shutil.copy(os.path.join(hs_source_dir, 'dev_hs.out'), os.path.join(dev_dir, 'dev.out'))
+    shutil.copy(os.path.join(hs_source_dir, 'train_hs.in'), os.path.join(train_dir, 'train.in'))
+    shutil.copy(os.path.join(hs_source_dir, 'train_hs.out'), os.path.join(train_dir, 'train.out'))
+    shutil.copy(os.path.join(hs_source_dir, 'test_hs.in'), os.path.join(test_dir, 'test.in'))
+    shutil.copy(os.path.join(hs_source_dir, 'test_hs.out'), os.path.join(test_dir, 'test.out'))
+
+    print('Splitting dataset')
+    split_input(os.path.join(dev_dir, 'dev.in'))
+    split_input(os.path.join(train_dir, 'train.in'))
+    split_input(os.path.join(test_dir, 'test.in'))
+
+    print('Tokenizing')
+    tokenize(os.path.join(dev_dir, 'dev.in.description'))
+    tokenize(os.path.join(train_dir, 'train.in.description'))
+    tokenize(os.path.join(test_dir, 'test.in.description'))
+
+    print('Building vocabulary')
+    vocab = build_vocab_from_token_files(glob.glob(os.path.join(hs_dir, '*/*.tokens')))
+    vocab_glove = get_glove_vocab().getSet()
+    vocab_unk = vocab - vocab_glove
+    vocab = vocab - vocab_unk
+    vocab, vocab_unk = move_numbers_from_known(vocab, vocab_unk)
+    save_vocab(os.path.join(hs_dir, 'vocab.txt'), vocab)
+    save_vocab(os.path.join(hs_dir, 'vocab.unk.txt'), vocab_unk)
+
     # print('Parsing descriptions for variables')
     # parse_for_variables(os.path.join(dev_dir, 'dev.in.tokens'), vocab_unk)
     # parse_for_variables(os.path.join(train_dir, 'train.in.tokens'), vocab_unk)
     # parse_for_variables(os.path.join(test_dir, 'test.in.tokens'), vocab_unk)
-    #
-    # print('Parsing descriptions trees')
-    # parse(os.path.join(dev_dir, 'dev.in.tokens'), os.path.join(hs_dir, 'vocab.unk.txt'))
-    # parse(os.path.join(train_dir, 'train.in.tokens'), os.path.join(hs_dir, 'vocab.unk.txt'))
-    # parse(os.path.join(test_dir, 'test.in.tokens'), os.path.join(hs_dir, 'vocab.unk.txt'))
+
+    print('Parsing descriptions trees')
+    parse(os.path.join(dev_dir, 'dev.in.tokens'), os.path.join(hs_dir, 'vocab.unk.txt'))
+    parse(os.path.join(train_dir, 'train.in.tokens'), os.path.join(hs_dir, 'vocab.unk.txt'))
+    parse(os.path.join(test_dir, 'test.in.tokens'), os.path.join(hs_dir, 'vocab.unk.txt'))
 
     print('Parsing output code')
     parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'), os.path.join(dev_dir, 'dev.out.bin'))
-    parse_trees_train = parse_code_trees(os.path.join(train_dir, 'train.out'), os.path.join(dev_dir, 'train.out.bin'))
-    parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'), os.path.join(dev_dir, 'test.out.bin'))
+    parse_trees_train = parse_code_trees(os.path.join(train_dir, 'train.out'), os.path.join(train_dir, 'train.out.bin'))
+    parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'), os.path.join(test_dir, 'test.out.bin'))
     parse_trees = parse_trees_dev+parse_trees_train+parse_trees_test
 
     print('Applying unary closures')
