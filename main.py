@@ -4,7 +4,6 @@ import logging
 import sys
 
 from utils.general import init_logging
-from learner import Learner
 from model.x2x import Tree2TreeModel
 from config import parser
 

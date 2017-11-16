@@ -52,7 +52,7 @@ parser.add_argument('-optimizer', default='adam')
 parser.add_argument('-clip_grad', default=0., type=float)
 parser.add_argument('-train_patience', default=10, type=int)
 parser.add_argument('-max_epoch', default=50, type=int)
-parser.add_argument('-valid_metric', default='bleu')
+parser.add_argument('-batch_size', default=10, type=int)
 
 # decoding
 parser.add_argument('-beam_size', default=15, type=int)
