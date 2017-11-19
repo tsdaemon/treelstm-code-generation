@@ -9,6 +9,7 @@ from natural_lang.vocab import get_glove_vocab
 from lang.parse import *
 from utils.io import serialize_to_file
 from lang.unaryclosure import apply_unary_closures, get_top_unary_closures
+import Constants
 
 position_symbols = ["NAME_END",
                     "ATK_END",
@@ -182,6 +183,20 @@ if __name__ == '__main__':
     vocab, vocab_unk = move_numbers_from_known(vocab, vocab_unk)
     save_vocab(os.path.join(hs_dir, 'vocab.txt'), vocab)
     save_vocab(os.path.join(hs_dir, 'vocab.unk.txt'), vocab_unk)
+
+    print('Build vocab embeddings')
+    emb_file = os.path.join(hs_dir, 'hs_embed.pth')
+    glove_file = os.path.join(data_dir, 'glove/glove.840B.300d')
+    # load glove embeddings and vocab
+    glove_vocab, glove_emb = load_word_vectors(glove_file)
+    emb = torch.Tensor(vocab.size(),glove_emb.size(1)).normal_(-0.05,0.05)
+    # zero out the embeddings for padding and other special words if they are absent in vocab
+    for idx, item in enumerate([Constants.PAD_WORD, Constants.UNK_WORD, Constants.BOS_WORD, Constants.EOS_WORD]):
+        emb[idx].zero_()
+    for word in vocab.labelToIdx.keys():
+        if glove_vocab.getIndex(word):
+            emb[vocab.getIndex(word)] = glove_emb[glove_vocab.getIndex(word)]
+    torch.save(emb, emb_file)
 
     # print('Parsing descriptions for variables')
     # parse_for_variables(os.path.join(dev_dir, 'dev.in.tokens'), vocab_unk)

@@ -15,3 +15,4 @@ class Tree2TreeModel(nn.Module):
     def __init__(self, config):
         self.emb = nn.Embedding(config.source_vocab_size, config.word_embed_dim, padding_idx=Constants.PAD)
         self.encoder = ChildSumTreeLSTM(config.word_embed_dim, config.encoder_hidden_dim)
+

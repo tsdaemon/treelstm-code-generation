@@ -1,4 +1,4 @@
-import logging
+import numpy as np
 import torch
 from tqdm import tqdm
 from torch.autograd import Variable as Var
@@ -12,7 +12,24 @@ class Trainer(object):
         self.optimizer = optimizer
         self.metrics = metrics
 
-    # helper function for training
+
+    def train_all(self, train_data, dev_data, test_data, results_dir):
+        train_len = len(train_data)
+        train_indexes = np.arange(train_len)
+
+        max_epoch = self.config.max_epoch
+
+        cum_updates = 0
+        patience_counter = 0
+        history_valid_perf = []
+        history_valid_bleu = []
+        history_valid_acc = []
+        best_model_params = best_model_by_acc = best_model_by_bleu = None
+        for epoch in range(max_epoch):
+            self.train(train_data, epoch)
+
+
+
     def train(self, dataset, epoch):
         self.model.train()
         self.optimizer.zero_grad()
@@ -33,8 +50,7 @@ class Trainer(object):
                 self.optimizer.zero_grad()
         return loss/len(dataset)
 
-    # helper function for testing
-    def test(self, dataset, epoch):
+    def validate(self, dataset, epoch):
         self.model.eval()
         loss = 0
         predictions = []
@@ -44,6 +60,10 @@ class Trainer(object):
             if self.config.cuda:
                 input = input.cuda()
             output = self.model(enc_tree, input)
+
+            decode_results = decoder.decode_python_dataset(self.model, self.val_data, verbose=False)
+            bleu, accuracy = evaluation.evaluate_decode_results(self.val_data, decode_results, verbose=False)
+
             err = self.criterion(output, dec_tree)
             loss += err.data[0]
             predictions.append(output)
