@@ -7,6 +7,7 @@ from utils.io import deserialize_from_file
 from natural_lang.vocab import Vocab
 from config import parser
 
+
 def load_dataset(config):
     data_dir = config.data_dir
     hs_dir = os.path.join(data_dir, 'hs')

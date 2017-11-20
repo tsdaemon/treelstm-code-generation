@@ -9,11 +9,6 @@ parser.add_argument('-output_dir', default='checkpoints')
 parser.add_argument('-dataset', default='django', choices=['django', 'hs', 'bs'])
 
 # neural model's parameters
-parser.add_argument('-source_vocab_size', default=0, type=int)
-parser.add_argument('-target_vocab_size', default=0, type=int)
-parser.add_argument('-rule_num', default=0, type=int)
-parser.add_argument('-node_num', default=0, type=int)
-
 parser.add_argument('-word_embed_dim', default=300, type=int)
 parser.add_argument('-rule_embed_dim', default=256, type=int)
 parser.add_argument('-node_embed_dim', default=256, type=int)

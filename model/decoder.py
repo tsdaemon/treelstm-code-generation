@@ -5,8 +5,10 @@ import torch.nn.functional as F
 
 
 class CondAttLSTM(nn.Module):
-    def __init__(self, input_dim, output_dim,
-                 context_dim, att_hidden_dim,
+    def __init__(self, input_dim,
+                 output_dim,
+                 context_dim,
+                 att_hidden_dim,
                  config,
                  p_dropout=0.0):
 
@@ -199,10 +201,13 @@ class PointerNet(nn.Module):
         super(PointerNet, self).__init__()
 
         self.dense1_input = nn.Linear(config.encoder_hidden_dim, config.ptrnet_hidden_dim)
+        init.uniform(self.dense1_input.weight)
 
         self.dense1_h = nn.Linear(config.decoder_hidden_dim + config.encoder_hidden_dim, config.ptrnet_hidden_dim)
+        init.uniform(self.dense1_h.weight)
 
         self.dense2 = nn.Linear(config.ptrnet_hidden_dim, 1)
+        init.uniform(self.dense2.weight)
 
     def forward(self, query_embed, decoder_states):
         query_embed_trans = self.dense1_input(query_embed)
