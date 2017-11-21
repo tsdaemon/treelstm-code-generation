@@ -3,11 +3,13 @@ import numpy as np
 import logging
 import sys
 import torch
+import torch.optim as optim
 import random
 
 from utils.general import init_logging
 from model.x2x import Tree2TreeModel
 from config import parser
+from trainer import Trainer
 
 
 if __name__ == '__main__':
@@ -37,7 +39,7 @@ if __name__ == '__main__':
     init_logging(os.path.join(args.output_dir, 'parser.log'), logging.INFO)
     logging.info('command line: %s', ' '.join(sys.argv))
     logging.info('current config: %s', args)
-    logging.info('loading dataset [%s]', args.data)
+    logging.info('loading dataset [%s]', args.dataset)
 
     # load data
     load_dataset = None
@@ -48,8 +50,8 @@ if __name__ == '__main__':
     train_data, dev_data, test_data = load_dataset(args)
 
     # configure more variables
-    args.source_vocab_size = train_data.annot_vocab.size
-    args.target_vocab_size = train_data.terminal_vocab.size
+    args.source_vocab_size = train_data.vocab.size()
+    args.target_vocab_size = train_data.terminal_vocab.size()
     args.rule_num = len(train_data.grammar.rules)
     args.node_num = len(train_data.grammar.node_type_to_id)
 
@@ -63,5 +65,6 @@ if __name__ == '__main__':
         model = model.cuda()
 
     # create learner
-    learner = Learner(model, train_data, dev_data)
-    learner.train()
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    trainer = Trainer(model, args, optimizer)
+    trainer.train_all(train_data, dev_data, test_data, args.output_dir)

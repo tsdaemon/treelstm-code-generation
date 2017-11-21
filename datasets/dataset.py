@@ -1,6 +1,7 @@
 from copy import deepcopy
 from tqdm import tqdm
 import torch.utils.data as data
+from torch.autograd import Variable as Var
 import torch
 import os
 import numpy as np
@@ -27,21 +28,46 @@ class Dataset(data.Dataset):
 
         self.config = config
 
-        self.load_input(data_dir, file_name, config.syntax)
+        self.load_queries(data_dir, file_name, config.syntax)
         self.size = self.load_output(data_dir, file_name)
         self.init_data_matrices()
+
+    def prepare_torch(self):
+        self.queries = Var(torch.stack(self.queries))
+        self.tgt_node_seq = Var(torch.from_numpy(self.data_matrix['tgt_node_seq']))
+        self.tgt_par_rule_seq = Var(torch.from_numpy(self.data_matrix['tgt_par_rule_seq']))
+        self.tgt_par_t_seq = Var(torch.from_numpy(self.data_matrix['tgt_par_t_seq']))
+        self.tgt_action_seq = Var(torch.from_numpy(self.data_matrix['tgt_action_seq']))
+        self.tgt_action_seq_type = Var(torch.from_numpy(self.data_matrix['tgt_action_seq_type']))
+
+        if self.config.cuda:
+            self.queries = self.queries.cuda()
+            self.tgt_node_seq = self.tgt_node_seq.cuda()
+            self.tgt_par_rule_seq = self.tgt_par_rule_seq.cuda()
+            self.tgt_par_t_seq = self.tgt_par_t_seq.cuda()
+            self.tgt_action_seq = self.tgt_action_seq.cuda()
+            self.tgt_action_seq_type = self.tgt_action_seq_type.cuda()
 
     def __len__(self):
         return self.size
 
     def __getitem__(self, index):
-        enc_tree = deepcopy(self.enc_trees[index])
-        dec_tree = deepcopy(self.dec_trees[index])
-        input = deepcopy(self.inputs[index])
-        code = deepcopy(self.codes[index])
-        return enc_tree, dec_tree, input, code
+        enc_tree = deepcopy(self.query_trees[index])
 
-    def load_input(self, data_dir, file_name, syntax):
+        queries = self.queries[index]
+
+        tgt_node_seq = self.data_matrix['tgt_node_seq'][index]
+        tgt_par_rule_seq = self.data_matrix['tgt_par_rule_seq'][index]
+        tgt_par_t_seq = self.data_matrix['tgt_par_t_seq'][index]
+        tgt_action_seq = self.data_matrix['tgt_action_seq'][index]
+        tgt_action_seq_type = self.data_matrix['tgt_action_seq_type'][index]
+
+        code = deepcopy(self.codes[index])
+        return enc_tree, queries, \
+               tgt_node_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq, tgt_action_seq_type, \
+               code
+
+    def load_queries(self, data_dir, file_name, syntax):
         parents_file = os.path.join(data_dir, '{}.in.{}_parents'.format(file_name, parents_prefix[syntax]))
         tokens_file = os.path.join(data_dir, '{}.in.tokens'.format(file_name))
 
@@ -49,36 +75,33 @@ class Dataset(data.Dataset):
         self.query_trees = self.read_query_trees(parents_file)
 
         print('Reading query tokens...')
-        self.query, self.query_tokens = self.read_query(tokens_file)
-        self.query = self.fill_pads(self.query, self.query_trees)
+        self.queries, self.query_tokens = self.read_query(tokens_file)
+        self.queries = self.fix_query_length(self.queries)
 
     def read_query(self, filename):
         with open(filename, 'r') as f:
-            input_and_tokens = [self.read_query_line(line) for line in tqdm(f.readlines())]
+            query_and_tokens = [self.read_query_line(line) for line in tqdm(f.readlines())]
         # unzip
-        return tuple(zip(*input_and_tokens))
+        return tuple(zip(*query_and_tokens))
 
     def read_query_line(self, line):
         tokens = line.split()
         indices = self.vocab.convertToIdx(tokens, Constants.UNK_WORD)
         return torch.LongTensor(indices), tokens
 
-    def fill_pads(self, sentences, trees):
+    def fix_query_length(self, sentences):
         ls = []
-        for sentence, tree in zip(sentences, trees):
-            if tree is None:
-                ls.append(sentence)
-            else:
-                ls.append(self.fill_pad(sentence, tree))
+        for sentence in sentences:
+            ls.append(self.fix_length(sentence))
         return ls
 
-    def fill_pad(self, sentence, tree):
-        tree_size = tree.size()
-        if len(sentence) < tree_size:
-            pads = [Constants.PAD]*(tree_size-len(sentence))
+    def fix_length(self, sentence):
+        max_size = self.config.max_query_length
+        if len(sentence) < max_size:
+            pads = [Constants.PAD]*(max_size-len(sentence))
             return torch.LongTensor(sentence.tolist() + pads)
         else:
-            return sentence
+            return sentence[:max_size]
 
     def read_query_trees(self, filename):
         with open(filename, 'r') as f:

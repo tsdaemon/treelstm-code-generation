@@ -64,6 +64,7 @@ def split_input(filepath):
 
 
 def parse_code_trees(code_file, code_out_file):
+    print('Parsing code trees from file {}'.format(code_file))
     parse_trees = []
     codes = []
     rule_num = 0.
@@ -90,8 +91,6 @@ def parse_code_trees(code_file, code_out_file):
         parse_trees.append(p_tree)
 
     serialize_to_file(codes, code_out_file)
-
-    print('Avg. nums of rules: %f' % (rule_num / example_num))
     return parse_trees
 
 
@@ -126,6 +125,7 @@ def write_terminal_tokens_vocab(grammar, parse_trees, out_file):
 
 
 def do_unary_closures(parse_trees):
+    print('Applying unary closures to parse trees...')
     unary_closures = get_top_unary_closures(parse_trees, k=20)
     for parse_tree in tqdm(parse_trees):
         apply_unary_closures(parse_tree, unary_closures)
@@ -185,6 +185,7 @@ if __name__ == '__main__':
     save_vocab(os.path.join(hs_dir, 'vocab.unk.txt'), vocab_unk)
 
     print('Build vocab embeddings')
+    vocab = Vocab(filename=os.path.join(hs_dir, 'vocab.txt'), data=[Constants.PAD_WORD, Constants.UNK_WORD, Constants.BOS_WORD, Constants.EOS_WORD])
     emb_file = os.path.join(hs_dir, 'word_embeddings.pth')
     glove_file = os.path.join(data_dir, 'glove/glove.840B.300d')
     # load glove embeddings and vocab

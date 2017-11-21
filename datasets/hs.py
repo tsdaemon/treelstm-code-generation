@@ -54,6 +54,9 @@ def load_dataset(config):
             dev = Dataset(dev_dir, 'dev', grammar, vocab, terminal_vocab, config)
             torch.save(dev, dev_file)
 
+    train.prepare_torch()
+    dev.prepare_torch()
+    test.prepare_torch()
     return train, dev, test
 
 

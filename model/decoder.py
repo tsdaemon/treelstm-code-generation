@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
 
+from model.utils import *
+
 
 class CondAttLSTM(nn.Module):
     def __init__(self, input_dim,
@@ -86,7 +88,10 @@ class CondAttLSTM(nn.Module):
         self.cuda = config.cuda
         self.parent_hidden_state_feed = config.parent_hidden_state_feed
 
-    def forward(self, t, X, context, hist_h, h, c, parent_t):
+    def forward(self, *input):
+        pass
+
+    def forward_node_train(self, t, X, context, hist_h, h, c, parent_t):
         # (input_dim)
         X = self.dropout(X)
 
@@ -98,14 +103,6 @@ class CondAttLSTM(nn.Module):
 
         # (context_size, att_layer1_dim)
         context_att_trans = self.att_ctx(context)
-
-        # if not init_state:
-        #     init_state = torch.cuda.FloatTensor(self.output_dim) if self.cuda else torch.FloatTensor(self.output_dim)
-        #     init_state = init_state.zero_()
-        #
-        # if not init_cell:
-        #     init_cell = torch.cuda.FloatTensor(self.output_dim) if self.cuda else torch.FloatTensor(self.output_dim)
-        #     init_cell = init_cell.zero_()
 
         # (att_layer1_dim)
         h_att_trans = self.att_h(h)
@@ -119,18 +116,11 @@ class CondAttLSTM(nn.Module):
         # (context_size)
         ctx_att = F.exp(att_raw - att_raw.max(dim=-1, keepdim=True))
 
-        # if context_mask:
-        #     ctx_att = ctx_att * context_mask
-
         ctx_att = ctx_att / ctx_att.sum(dim=-1, keepdim=True)
         # (context_dim)
         ctx_vec = (context * ctx_att.unsqueeze(1)).sum(axis=1)
 
-        ##### attention over history #####
         def _attention_over_history():
-            # hist_h_mask = torch.CharTensor(hist_h.shape).zero_()
-            # hist_h_mask.put() = T.set_subtensor(hist_h_mask[:, T.arange(t)], 1)
-
             # hist_h - (seq_len, output_dim)
             # (seq_len, att_hidden_dim)
             hist_h_att_trans = self.h_att_hist(hist_h)
@@ -159,7 +149,6 @@ class CondAttLSTM(nn.Module):
         else:
             h_ctx_vec = torch.zeros(h.shape)
 
-        ##### feed in parent hidden state #####
         if t and self.parent_hidden_state_feed:
             par_h = hist_h[parent_t, :]
         else:
@@ -170,30 +159,28 @@ class CondAttLSTM(nn.Module):
         c_new = f * c + i * F.tanh(self.wc(X) + self.uc(h) + self.cc(ctx_vec) +
                                    self.pc(par_h) + self.hc(h_ctx_vec))
         o = F.sigmoid(self.wo(X) + self.uo(h) + self.co(ctx_vec) + self.po(par_h) + self.ho(h_ctx_vec))
-        # else:
-        #     i_t = self.inner_activation(
-        #         xi_t + T.dot(h_tm1 * b_u[0], u_i) + T.dot(ctx_vec, c_i) + T.dot(par_h, p_i))  # + T.dot(h_ctx_vec, h_i)
-        #     f_t = self.inner_activation(
-        #         xf_t + T.dot(h_tm1 * b_u[1], u_f) + T.dot(ctx_vec, c_f) + T.dot(par_h, p_f))  # + T.dot(h_ctx_vec, h_f)
-        #     c_t = f_t * c_tm1 + i_t * self.activation(
-        #         xc_t + T.dot(h_tm1 * b_u[2], u_c) + T.dot(ctx_vec, c_c) + T.dot(par_h, p_c))  # + T.dot(h_ctx_vec, h_c)
-        #     o_t = self.inner_activation(
-        #         xo_t + T.dot(h_tm1 * b_u[3], u_o) + T.dot(ctx_vec, c_o) + T.dot(par_h, p_o))  # + T.dot(h_ctx_vec, h_o)
 
         h = o * self.activation(c_new)
-
-        # h_t = (1 - mask_t) * h_tm1 + mask_t * h_t
-        # c_t = (1 - mask_t) * c_tm1 + mask_t * c_t
 
         hist_h[parent_t, :] = h
 
         return h, c, ctx_vec, hist_h
 
-        outputs = outputs.dimshuffle((1, 0, 2))
-        ctx_vectors = ctx_vectors.dimshuffle((1, 0, 2))
-        cells = cells.dimshuffle((1, 0, 2))
+    # Teacher forcing: Feed the target as the next input
+    def forward_train(self, X, context, h, parent_t):
+        length = len(X)
+        # (max_sequence_length, decoder_hidden_dim)
+        output_h = zeros((length, self.output_dim), self.config.cuda)
+        # (max_sequence_length, context_size)
+        output_ctx = zeros((length, self.output_dim), self.config.cuda)
+        # (decoder_hidden_dim)
+        c = zeros(self.output_dim, self.config.cuda)
 
-        return outputs, cells, ctx_vectors
+        for t in range(length):
+            h, c, ctx_vec, output_h = self.forward_node_train(t, X[t], context, output_h, h, c, parent_t)
+            output_ctx[t] = ctx_vec
+
+        return output_h, output_ctx
 
 
 class PointerNet(nn.Module):

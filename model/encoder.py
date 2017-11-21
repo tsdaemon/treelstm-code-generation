@@ -7,7 +7,8 @@ from torch.autograd import Variable as Var
 
 class ChildSumTreeLSTM(nn.Module):
     def __init__(self, in_dim, mem_dim, p_dropout=0.0):
-        super(ChildSumTreeLSTM, self).__init__()
+        super().__init__()
+
         self.in_dim = in_dim
         self.mem_dim = mem_dim
 
