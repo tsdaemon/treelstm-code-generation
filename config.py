@@ -54,7 +54,7 @@ parser.add_argument('-no_cuda', dest='cuda', action='store_false')
 
 # decoding
 parser.add_argument('-beam_size', default=15, type=int)
-parser.add_argument('-max_query_length', default=100, type=int)
+parser.add_argument('-max_query_length', default=200, type=int)
 parser.add_argument('-max_example_action_num', default=200, type=int)
 parser.add_argument('-decode_max_time_step', default=200, type=int)
 parser.add_argument('-head_nt_constraint', dest='head_nt_constraint', action='store_true')

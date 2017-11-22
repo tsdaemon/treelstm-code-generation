@@ -20,7 +20,8 @@ class Trainer(object):
         history_valid_acc = []
         best_model_params = best_model_by_acc = best_model_by_bleu = None
         for epoch in range(max_epoch):
-            self.train(train_data, epoch)
+            mean_loss = self.train(train_data, epoch)
+            print('\nEpoch {} training finished, mean loss: {}.'.format(epoch+1, mean_loss))
 
     def train(self, dataset, epoch):
         self.model.train()
@@ -39,7 +40,7 @@ class Trainer(object):
             if k % batch_size == 0:
                 self.optimizer.step()
                 self.optimizer.zero_grad()
-                print('Batch {}, loss {}'.format(k/batch_size, loss_batch/batch_size))
+                #print('Batch {}, loss {}'.format(k/batch_size, loss_batch/batch_size))
                 loss_batch = 0.0
 
         return total_loss/len(dataset)

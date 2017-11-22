@@ -42,7 +42,7 @@ class ChildSumTreeLSTM(nn.Module):
 
         c = torch.mul(i, u) + torch.sum(fc, dim=0, keepdim=True)
         h = torch.mul(o, F.tanh(c))
-        return c, self.dropout(h)
+        return c, h #self.dropout(h)
 
     def forward_inner(self, tree, inputs):
         _ = [self.forward_inner(tree.children[idx], inputs) for idx in range(tree.num_children)]
@@ -60,4 +60,4 @@ class ChildSumTreeLSTM(nn.Module):
     def forward(self, tree, inputs):
         inputs = self.dropout(inputs)
         self.forward_inner(tree, inputs)
-        return tree.state, torch.stack([t.state for t in tree.data()])
+        return tree.state[1].squeeze(), torch.stack([t.state[1] for t in tree.data()]).squeeze()
