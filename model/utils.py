@@ -12,18 +12,11 @@ def ifcond(cond, x_1, x_2):
     return (cond * x_1) + ((1-cond) * x_2)
 
 
-def softmax(input, dim=1):
-    input_size = input.size()
-
-    trans_input = input.transpose(dim, len(input_size)-1)
-    trans_size = trans_input.size()
-
-    input_2d = trans_input.contiguous().view(-1, trans_size[-1])
-
-    soft_max_2d = F.softmax(input_2d)
-
-    soft_max_nd = soft_max_2d.view(*trans_size)
-    return soft_max_nd.transpose(dim, len(input_size)-1)
+def from_list(ls, cuda):
+    tensor = torch.FloatTensor(ls)
+    if cuda:
+        tensor = tensor.cuda()
+    return tensor
 
 
 def zeros(*shape, cuda=False):

@@ -3,7 +3,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-data_dir', default='./preprocessed')
 parser.add_argument('-random_seed', default=181783, type=int)
-parser.add_argument('-output_dir', default='checkpoints')
+parser.add_argument('-output_dir', default='./results')
 
 # model's main configuration
 parser.add_argument('-dataset', default='django', choices=['django', 'hs', 'bs'])

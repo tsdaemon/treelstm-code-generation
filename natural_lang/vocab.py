@@ -1,5 +1,6 @@
 glove_vocab = "data/glove/glove.840B.300d.vocab"
 
+
 # vocab object from harvardnlp/opennmt-py
 class Vocab(object):
     def __init__(self, filename=None, data=None, lower=False):

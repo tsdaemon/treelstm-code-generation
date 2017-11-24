@@ -4,6 +4,8 @@ import torch.nn.init as init
 import torch.nn.functional as F
 
 from model.utils import *
+from lang.grammar import Grammar
+from lang.astnode import DecodeTree
 
 
 class CondAttLSTM(nn.Module):
@@ -90,10 +92,12 @@ class CondAttLSTM(nn.Module):
 
         self.softmax = nn.Softmax();
 
-    def forward(self, *input):
-        pass
+    def forward(self, t, X, context, hist_h, h, c, parent_h):
+        # (input_dim)
+        X = self.dropout(X)
+        return self.forward_node(t, X[t], context, hist_h, h, c, parent_h)
 
-    def forward_node_train(self, t, X, context, hist_h, h, c, parent_t):
+    def forward_node(self, t, X, context, hist_h, h, c, par_h):
         # (context_size, att_layer1_dim)
         context_att_trans = self.att_ctx(context)
 
@@ -103,12 +107,12 @@ class CondAttLSTM(nn.Module):
         # (context_size, att_layer1_dim)
         att_hidden = F.tanh(context_att_trans + h_att_trans.unsqueeze(0))
 
-        # (context_size, 1)
-        att_raw = self.att(att_hidden)
+        # (1, context_size)
+        att_raw = self.att(att_hidden).view(1, -1)
         # att_raw = att_raw.reshape((att_raw.shape[0], att_raw.shape[1]))
 
-        # (context_size)
-        ctx_att = softmax(att_raw, dim=0)
+        # (context_size, 1)
+        ctx_att = self.softmax(att_raw).view(-1, 1)
 
         # (context_dim)
         ctx_vec = (context * ctx_att).sum(dim=0)
@@ -124,11 +128,11 @@ class CondAttLSTM(nn.Module):
             # (seq_len, att_hidden_dim)
             hatt_hidden = F.tanh(hist_h_att_trans + h_hatt_trans.unsqueeze(0))
             # (seq_len, 1)
-            hatt_raw = self.h_att(hatt_hidden)
+            hatt_raw = self.h_att(hatt_hidden).view(1, -1)
             # hatt_raw = hatt_raw.reshape((hist_h.shape[0], hist_h.shape[1]))
 
             # (seq_len, 1)
-            h_att_weights = softmax(hatt_raw, dim=0)
+            h_att_weights = self.softmax(hatt_raw).view(-1, 1)
 
             # (output_dim)
             _h_ctx_vec = torch.sum(hist_h * h_att_weights, dim=0)
@@ -139,11 +143,6 @@ class CondAttLSTM(nn.Module):
             h_ctx_vec = _attention_over_history()
         else:
             h_ctx_vec = Var(zeros_like(h, self.cuda))
-
-        if t and self.parent_hidden_state_feed:
-            par_h = hist_h[parent_t, :]
-        else:
-            par_h = Var(zeros_like(h, self.cuda))
 
         i = F.sigmoid(self.wi(X) + self.ui(h) + self.ci(ctx_vec) + self.pi(par_h) + self.hi(h_ctx_vec))
         f = F.sigmoid(self.wf(X) + self.uf(h) + self.cf(ctx_vec) + self.pf(par_h) + self.hf(h_ctx_vec))
@@ -156,7 +155,7 @@ class CondAttLSTM(nn.Module):
         return h, c, ctx_vec
 
     # Teacher forcing: Feed the target as the next input
-    def forward_train(self, X, context, h, parent_t):
+    def forward_train(self, X, context, h, c, parent_t):
         length = len(X)
         # (max_sequence_length, input_dim)
         X = self.dropout(X)
@@ -164,11 +163,15 @@ class CondAttLSTM(nn.Module):
         output_h = None
         # (max_sequence_length, context_size)
         output_ctx = []
-        # (decoder_hidden_dim)
-        c = Var(zeros(self.output_dim, cuda=self.cuda))
 
         for t in range(length):
-            h, c, ctx_vec = self.forward_node_train(t, X[t], context, output_h, h, c, parent_t[t])
+            # extract parent node from history
+            if t and self.parent_hidden_state_feed:
+                par_h = output_h[parent_t[t], :]
+            else:
+                par_h = Var(zeros_like(h, self.cuda))
+
+            h, c, ctx_vec = self.forward_node(t, X[t], context, output_h, h, c, par_h)
             if output_h is None:
                 output_h = h.unsqueeze(0)
             else:
@@ -191,6 +194,8 @@ class PointerNet(nn.Module):
         self.dense2 = nn.Linear(config.ptrnet_hidden_dim, 1)
         init.xavier_uniform(self.dense2.weight)
 
+        self.log_softmax = nn.LogSoftmax()
+
     def forward(self, ctx, decoder_states):
         ctx_trans = self.dense1_input(ctx)
         decoder_trans = self.dense1_h(decoder_states)
@@ -203,6 +208,118 @@ class PointerNet(nn.Module):
 
         scores = self.dense2(dense1_trans).squeeze(2)
 
-        scores = softmax(scores)
+        scores = self.log_softmax(scores)
 
         return scores
+
+
+class Hyp:
+    def __init__(self, *args):
+        if isinstance(args[0], Hyp):
+            hyp = args[0]
+            self.grammar = hyp.grammar
+            self.tree = hyp.tree.copy()
+            self.t = hyp.t
+            self.hist_h = list(hyp.hist_h)
+            self.log = hyp.log
+            self.has_grammar_error = hyp.has_grammar_error
+        else:
+            assert isinstance(args[0], Grammar)
+            grammar = args[0]
+            self.grammar = grammar
+            self.tree = DecodeTree(grammar.root_node.type)
+            self.t=-1
+            self.hist_h = []
+            self.log = ''
+            self.has_grammar_error = False
+
+        self.score = 0.0
+
+        self.__frontier_nt = self.tree
+        self.__frontier_nt_t = -1
+
+    def __repr__(self):
+        return self.tree.__repr__()
+
+    def can_expand(self, node):
+        if self.grammar.is_value_node(node):
+            # if the node is finished
+            if node.value is not None and node.value.endswith('<eos>'):
+                return False
+            return True
+        elif self.grammar.is_terminal(node):
+            return False
+
+        return True
+
+    def apply_rule(self, rule, nt=None):
+        if nt is None:
+            nt = self.frontier_nt()
+
+        # assert rule.parent.type == nt.type
+        if rule.parent.type != nt.type:
+            self.has_grammar_error = True
+
+        self.t += 1
+        # set the time step when the rule leading by this nt is applied
+        nt.t = self.t
+        # record the ApplyRule action that is used to expand the current node
+        nt.applied_rule = rule
+
+        for child_node in rule.children:
+            child = DecodeTree(child_node.type, child_node.label, child_node.value)
+            # if is_builtin_type(rule.parent.type):
+            #     child.label = None
+            #     child.holds_value = True
+
+            nt.add_child(child)
+
+    def append_token(self, token, nt=None):
+        if nt is None:
+            nt = self.frontier_nt()
+
+        self.t += 1
+
+        if nt.value is None:
+            # this terminal node is empty
+            nt.t = self.t
+            nt.value = token
+        else:
+            nt.value += token
+
+    def frontier_nt_helper(self, node):
+        if node.is_leaf:
+            if self.can_expand(node):
+                return node
+            else:
+                return None
+
+        for child in node.children:
+            result = self.frontier_nt_helper(child)
+            if result:
+                return result
+
+        return None
+
+    def frontier_nt(self):
+        if self.__frontier_nt_t == self.t:
+            return self.__frontier_nt
+        else:
+            _frontier_nt = self.frontier_nt_helper(self.tree)
+            self.__frontier_nt = _frontier_nt
+            self.__frontier_nt_t = self.t
+
+            return _frontier_nt
+
+    def get_action_parent_t(self):
+        """
+        get the time step when the parent of the current
+        action was generated
+        WARNING: 0 will be returned if parent if None
+        """
+        nt = self.frontier_nt()
+
+        if nt.parent:
+            return nt.parent.t
+        else:
+            return 0

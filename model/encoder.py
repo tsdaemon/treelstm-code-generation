@@ -60,4 +60,4 @@ class ChildSumTreeLSTM(nn.Module):
     def forward(self, tree, inputs):
         inputs = self.dropout(inputs)
         self.forward_inner(tree, inputs)
-        return tree.state[1].squeeze(), torch.stack([t.state[1] for t in tree.data()]).squeeze()
+        return tree.state[1].squeeze(), tree.state[0].squeeze(), torch.stack([t.state[1] for t in tree.data()]).squeeze()
