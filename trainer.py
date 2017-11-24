@@ -1,7 +1,9 @@
-import numpy as np
 import torch
 from tqdm import tqdm
 from torch.autograd import Variable as Var
+import logging
+
+from utils.general import get_batches
 
 
 class Trainer(object):
@@ -21,27 +23,27 @@ class Trainer(object):
         best_model_params = best_model_by_acc = best_model_by_bleu = None
         for epoch in range(max_epoch):
             mean_loss = self.train(train_data, epoch)
-            print('\nEpoch {} training finished, mean loss: {}.'.format(epoch+1, mean_loss))
+            logging.info('\nEpoch {} training finished, mean loss: {}.'.format(epoch+1, mean_loss))
 
     def train(self, dataset, epoch):
         self.model.train()
         self.optimizer.zero_grad()
-        loss_batch, total_loss, k = 0.0, 0.0, 0
+        total_loss = 0.0
         batch_size = self.config.batch_size
         indices = torch.randperm(len(dataset))
-        for idx in tqdm(indices, desc='Training epoch '+str(epoch+1)+''):
-            enc_tree, query, tgt_node_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq, tgt_action_seq_type, _ = dataset[idx]
+        total_batches = len(indices)/batch_size
+        batches = get_batches(indices, batch_size)
 
-            loss = self.model.forward_train(enc_tree, query, tgt_node_seq, tgt_action_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq_type)
-            loss_batch += loss.data[0]
+        for i, batch in tqdm(enumerate(batches), desc='Training epoch '+str(epoch+1)+'', total=total_batches):
+            trees, queries, tgt_node_seq, tgt_par_rule_seq, tgt_par_t_seq, \
+            tgt_action_seq, tgt_action_seq_type, _ = dataset.get_batch(batch)
+
+            loss = self.model.forward_train(trees, queries, tgt_node_seq, tgt_action_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq_type)
             total_loss += loss.data[0]
             loss.backward()
-            k += 1
-            if k % batch_size == 0:
-                self.optimizer.step()
-                self.optimizer.zero_grad()
-                #print('Batch {}, loss {}'.format(k/batch_size, loss_batch/batch_size))
-                loss_batch = 0.0
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+            logging.debug('Batch {}, loss {}'.format(i+1, loss[0]))
 
         return total_loss/len(dataset)
 

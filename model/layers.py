@@ -1,12 +1,12 @@
 import torch.nn as nn
 
 
-class SoftmaxDense(nn.Linear):
+class LogSoftmaxDense(nn.Linear):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.log_softmax = nn.LogSoftmax()
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=-1)
+        self.log_softmax = nn.LogSoftmax(dim=-1)
 
     def forward(self, input):
         o = super().forward(input)

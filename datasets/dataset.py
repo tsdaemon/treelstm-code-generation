@@ -1,5 +1,4 @@
 from copy import deepcopy
-from tqdm import tqdm
 import torch.utils.data as data
 import torch
 import os
@@ -45,7 +44,7 @@ class Dataset(data.Dataset):
     def __getitem__(self, index):
         enc_tree = deepcopy(self.query_trees[index])
 
-        queries = self.queries[index]
+        query = self.queries[index]
 
         tgt_node_seq = self.tgt_node_seq[index]
         tgt_par_rule_seq = self.tgt_par_rule_seq[index]
@@ -54,9 +53,21 @@ class Dataset(data.Dataset):
         tgt_action_seq_type = self.tgt_action_seq_type[index]
 
         code = deepcopy(self.codes[index])
-        return enc_tree, queries, \
+        return enc_tree, query, \
                tgt_node_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq, tgt_action_seq_type, \
                code
+
+    def get_batch(self, indices):
+        trees = [deepcopy(self.query_trees[index]) for index in indices]
+        queries = self.queries[indices]
+
+        tgt_node_seq = self.tgt_node_seq[indices]
+        tgt_par_rule_seq = self.tgt_par_rule_seq[indices]
+        tgt_par_t_seq = self.tgt_par_t_seq[indices]
+        tgt_action_seq = self.tgt_action_seq[indices]
+        tgt_action_seq_type = self.tgt_action_seq_type[indices]
+        return trees, queries, \
+               tgt_node_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq, tgt_action_seq_type
 
     def load_queries(self, data_dir, file_name, syntax):
         parents_file = os.path.join(data_dir, '{}.in.{}_parents'.format(file_name, parents_prefix[syntax]))

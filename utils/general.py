@@ -15,3 +15,11 @@ def init_logging(file_name, level=logging.INFO):
     logging.getLogger().setLevel(level)
 
     logging.info('init logging file [%s]' % file_name)
+
+
+# Create a function called "chunks" with two arguments, l and n:
+def get_batches(l, n):
+    # For item i in a range that is a length of l,
+    for i in range(0, len(l), n):
+        # Create an index range for l of n items:
+        yield l[i:i+n]

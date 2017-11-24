@@ -13,8 +13,7 @@ class CondAttLSTM(nn.Module):
                  output_dim,
                  context_dim,
                  att_hidden_dim,
-                 config,
-                 p_dropout=0.0):
+                 config):
 
         super(CondAttLSTM, self).__init__()
 
@@ -23,52 +22,32 @@ class CondAttLSTM(nn.Module):
         self.input_dim = input_dim
 
         # input gate
-        self.wi = nn.Linear(input_dim, output_dim)
-        init.xavier_uniform(self.wi.weight)
-        self.ui = nn.Linear(output_dim, output_dim, bias=False)
-        init.orthogonal(self.ui.weight)
-        self.ci = nn.Linear(context_dim, output_dim, bias=False)
-        init.orthogonal(self.ci.weight)
-        self.hi = nn.Linear(output_dim, output_dim, bias=False)
-        init.orthogonal(self.hi.weight)
-        self.pi = nn.Linear(output_dim, output_dim, bias=False)
-        init.orthogonal(self.pi.weight)
+        self.W_ix = nn.Linear(input_dim, output_dim)
+        init.xavier_uniform(self.i_x.weight)
+
+        self.W_i = nn.Linear(output_dim + context_dim + output_dim + output_dim, output_dim, bias=False)
+        init.orthogonal(self.i.weight)
 
         # forget gate
-        self.wf = nn.Linear(input_dim, output_dim)
-        init.xavier_uniform(self.wf.weight)
-        self.uf = nn.Linear(output_dim, output_dim, bias=False)
-        init.orthogonal(self.uf.weight)
-        self.cf = nn.Linear(context_dim, output_dim, bias=False)
-        init.orthogonal(self.cf.weight)
-        self.hf = nn.Linear(output_dim, output_dim, bias=False)
-        init.orthogonal(self.hf.weight)
-        self.pf = nn.Linear(output_dim, output_dim, bias=False)
-        init.orthogonal(self.pf.weight)
+        self.W_fx = nn.Linear(input_dim, output_dim)
+        init.xavier_uniform(self.W_fx.weight)
+
+        self.W_f = nn.Linear(output_dim + context_dim + output_dim + output_dim, output_dim, bias=False)
+        init.orthogonal(self.W_f.weight)
 
         # memory cell new value
-        self.wc = nn.Linear(input_dim, output_dim)
-        init.xavier_uniform(self.wc.weight)
-        self.uc = nn.Linear(output_dim, output_dim, bias=False)
-        init.orthogonal(self.uc.weight)
-        self.cc = nn.Linear(context_dim, output_dim, bias=False)
-        init.orthogonal(self.cc.weight)
-        self.hc = nn.Linear(output_dim, output_dim, bias=False)
-        init.orthogonal(self.hc.weight)
-        self.pc = nn.Linear(output_dim, output_dim, bias=False)
-        init.orthogonal(self.pc.weight)
+        self.W_cx = nn.Linear(input_dim, output_dim)
+        init.xavier_uniform(self.W_cx.weight)
+
+        self.W_c = nn.Linear(output_dim + context_dim + output_dim + output_dim, output_dim, bias=False)
+        init.orthogonal(self.W_c.weight)
 
         # output gate
-        self.wo = nn.Linear(input_dim, output_dim)
-        init.xavier_uniform(self.wo.weight)
-        self.uo = nn.Linear(output_dim, output_dim, bias=False)
-        init.orthogonal(self.uo.weight)
-        self.co = nn.Linear(context_dim, output_dim, bias=False)
-        init.orthogonal(self.co.weight)
-        self.ho = nn.Linear(output_dim, output_dim, bias=False)
-        init.orthogonal(self.ho.weight)
-        self.po = nn.Linear(output_dim, output_dim, bias=False)
-        init.orthogonal(self.po.weight)
+        self.W_ox = nn.Linear(input_dim, output_dim)
+        init.xavier_uniform(self.W_ox.weight)
+
+        self.W_o = nn.Linear(output_dim, output_dim, bias=False)
+        init.orthogonal(self.W_o.weight)
 
         # attention layer
         self.att_ctx = nn.Linear(context_dim, att_hidden_dim)
@@ -86,96 +65,119 @@ class CondAttLSTM(nn.Module):
         self.h_att = nn.Linear(att_hidden_dim, 1)
         init.xavier_uniform(self.h_att.weight)
 
-        self.dropout = nn.AlphaDropout(p=p_dropout)
+        self.dropout = nn.AlphaDropout(p=config.dropout)
+        self.softmax = nn.Softmax(dim=-1);
+
         self.cuda = config.cuda
         self.parent_hidden_state_feed = config.parent_hidden_state_feed
 
-        self.softmax = nn.Softmax();
+    # one time step at the time
+    def forward(self, t, x, context, hist_h, h, c, parent_h):
+        # (batch_size, input_dim)
+        x = self.dropout(x)
+        # (batch_size, output_dim)
+        xi, xf, xo, xc = self.W_ix(x), self.W_fx(x), self.W_ox(x), self.W_cx(x)
 
-    def forward(self, t, X, context, hist_h, h, c, parent_h):
-        # (input_dim)
-        X = self.dropout(X)
-        return self.forward_node(t, X[t], context, hist_h, h, c, parent_h)
+        return self.forward_node(t,
+                                 xi, xf, xo, xc,
+                                 context, hist_h,
+                                 h, c, parent_h)
 
-    def forward_node(self, t, X, context, hist_h, h, c, par_h):
-        # (context_size, att_layer1_dim)
+    def forward_node(self, t,
+                     xi, xf, xo, xc,
+                     context, hist_h,
+                     h, c, par_h):
+        # (batch_size, context_size, att_layer1_dim)
         context_att_trans = self.att_ctx(context)
 
-        # (att_layer1_dim)
+        # (batch_size, att_layer1_dim)
         h_att_trans = self.att_h(h)
 
-        # (context_size, att_layer1_dim)
-        att_hidden = F.tanh(context_att_trans + h_att_trans.unsqueeze(0))
+        # (batch_size, context_size, att_layer1_dim)
+        att_hidden = F.tanh(context_att_trans + h_att_trans.unsqueeze(1))
 
-        # (1, context_size)
-        att_raw = self.att(att_hidden).view(1, -1)
-        # att_raw = att_raw.reshape((att_raw.shape[0], att_raw.shape[1]))
+        # (batch_size, context_size)
+        att_raw = self.att(att_hidden)
 
-        # (context_size, 1)
-        ctx_att = self.softmax(att_raw).view(-1, 1)
+        # (batch_size, context_size)
+        ctx_att = self.softmax(att_raw)
 
-        # (context_dim)
-        ctx_vec = (context * ctx_att).sum(dim=0)
+        # (batch_size, context_dim)
+        ctx_vec = (context * ctx_att).sum(dim=1)
 
         def _attention_over_history():
-            # hist_h - (seq_len, output_dim)
-            # (seq_len, att_hidden_dim)
+            # hist_h - (batch_size, seq_len, output_dim)
+            # (batch_size, seq_len, att_hidden_dim)
             hist_h_att_trans = self.h_att_hist(hist_h)
 
-            # h - (output_dim)
-            # (att_hidden_dim)
+            # h - (batch_size, output_dim)
+            # (batch_size, att_hidden_dim)
             h_hatt_trans = self.h_att_h(h)
-            # (seq_len, att_hidden_dim)
-            hatt_hidden = F.tanh(hist_h_att_trans + h_hatt_trans.unsqueeze(0))
-            # (seq_len, 1)
-            hatt_raw = self.h_att(hatt_hidden).view(1, -1)
-            # hatt_raw = hatt_raw.reshape((hist_h.shape[0], hist_h.shape[1]))
 
-            # (seq_len, 1)
-            h_att_weights = self.softmax(hatt_raw).view(-1, 1)
+            # (batch_size, seq_len, att_hidden_dim)
+            hatt_hidden = F.tanh(hist_h_att_trans + h_hatt_trans.unsqueeze(1))
 
-            # (output_dim)
-            _h_ctx_vec = torch.sum(hist_h * h_att_weights, dim=0)
+            # (batch_size, seq_len)
+            hatt_raw = self.h_att(hatt_hidden)
+
+            # (batch_size, seq_len)
+            h_att_weights = self.softmax(hatt_raw)
+
+            # (batch_size, output_dim)
+            _h_ctx_vec = torch.sum(hist_h * h_att_weights, dim=1)
 
             return _h_ctx_vec
 
-        if t:
+        if t and self.config.tree_attention:
             h_ctx_vec = _attention_over_history()
         else:
             h_ctx_vec = Var(zeros_like(h, self.cuda))
 
-        i = F.sigmoid(self.wi(X) + self.ui(h) + self.ci(ctx_vec) + self.pi(par_h) + self.hi(h_ctx_vec))
-        f = F.sigmoid(self.wf(X) + self.uf(h) + self.cf(ctx_vec) + self.pf(par_h) + self.hf(h_ctx_vec))
-        c_new = f * c + i * F.tanh(self.wc(X) + self.uc(h) + self.cc(ctx_vec) +
-                                   self.pc(par_h) + self.hc(h_ctx_vec))
-        o = F.sigmoid(self.wo(X) + self.uo(h) + self.co(ctx_vec) + self.po(par_h) + self.ho(h_ctx_vec))
+        if not self.config.parent_hidden_state_feed:
+            par_h *= 0.
 
-        h = o * F.tanh(c_new)
+        # (batch_size, output_dim + context_dim + output_dim + output_dim)
+        h_comb = torch.cat([h, ctx_vec, par_h, h_ctx_vec], dim=-1)
+
+        # (batch_size, output_dim)
+        i = F.sigmoid(xi + self.W_i(h_comb))
+        f = F.sigmoid(xf + self.W_f(h_comb))
+        c = f * c + i * F.tanh(xc + self.W_c(h_comb))
+        o = F.sigmoid(xo + self.W_o(h_comb))
+
+        h = o * F.tanh(c)
 
         return h, c, ctx_vec
 
-    # Teacher forcing: Feed the target as the next input
+    # all inputs at the time (teacher forcing)
     def forward_train(self, X, context, h, c, parent_t):
-        length = len(X)
-        # (max_sequence_length, input_dim)
+        length = len(X.shape[1])
+        # (batch_size, max_sequence_length, input_dim)
         X = self.dropout(X)
-        # (max_sequence_length, decoder_hidden_dim)
+        # calculate all X dense transformation at once
+        # (batch_size, max_sequence_length, output_dim)
+        Xi, Xf, Xo, Xc = self.W_ix(X), self.W_fx(X), self.W_ox(X), self.W_cx(X)
+        # (batch_size, max_sequence_length, decoder_hidden_dim)
         output_h = None
-        # (max_sequence_length, context_size)
+        # (batch_size, max_sequence_length, encoder_hidden_dim)
         output_ctx = []
 
         for t in range(length):
             # extract parent node from history
             if t and self.parent_hidden_state_feed:
-                par_h = output_h[parent_t[t], :]
+                par_h = output_h[:, parent_t[t], :]
             else:
                 par_h = Var(zeros_like(h, self.cuda))
 
-            h, c, ctx_vec = self.forward_node(t, X[t], context, output_h, h, c, par_h)
+            h, c, ctx_vec = \
+                self.forward_node(t,
+                                  Xi[:, t, :].sqeeze(1), Xf[:, t, :].sqeeze(1), Xo[:, t, :].sqeeze(1), Xc[:, t, :].sqeeze(1),
+                                  context, output_h,
+                                  h, c, par_h)
             if output_h is None:
-                output_h = h.unsqueeze(0)
+                output_h = h.unsqueeze(1)
             else:
-                output_h = torch.cat([output_h, h.unsqueeze(0)])
+                output_h = torch.cat([output_h, h.unsqueeze(1)])
             output_ctx.append(ctx_vec)
 
         return output_h, torch.stack(output_ctx)
@@ -194,22 +196,49 @@ class PointerNet(nn.Module):
         self.dense2 = nn.Linear(config.ptrnet_hidden_dim, 1)
         init.xavier_uniform(self.dense2.weight)
 
-        self.log_softmax = nn.LogSoftmax()
+        self.log_softmax = nn.LogSoftmax(dim=-1)
+        self.softmax = nn.Softmax(dim=-1);
 
-    def forward(self, ctx, decoder_states):
+    def forward_scores(self, ctx, decoder_states):
+        # (batch_size, max_query_length, ptrnet_hidden_dim)
         ctx_trans = self.dense1_input(ctx)
+
+        # (batch_size, max_decode_step, ptrnet_hidden_dim)
         decoder_trans = self.dense1_h(decoder_states)
 
-        ctx_trans = ctx_trans.unsqueeze(0)
-        decoder_trans = decoder_trans.unsqueeze(1)
+        # (batch_size, 1, max_query_length, ptrnet_hidden_dim)
+        ctx_trans = ctx_trans.unsqueeze(2)
 
-        # (max_decode_step, query_token_num, ptr_net_hidden_dim)
+        # (batch_size, max_decode_step, 1, ptrnet_hidden_dim)
+        decoder_trans = decoder_trans.unsqueeze(2)
+
+        # (batch_size, max_decode_step, max_query_length, ptr_net_hidden_dim)
         dense1_trans = F.tanh(ctx_trans + decoder_trans)
 
-        scores = self.dense2(dense1_trans).squeeze(2)
+        # (batch_size,  max_decode_step, max_query_length, 1)
+        scores = self.dense2(dense1_trans)
 
+        # (batch_size,  max_decode_step, max_query_length)
+        return scores.squeeze(3)
+
+    def forward(self, ctx, decoder_states):
+        # (batch_size,  max_decode_step, max_query_length)
+        scores = self.forward_scores(ctx, decoder_states)
+
+        # (batch_size,  max_decode_step, max_query_length)
+        scores = self.softmax(scores)
+
+        # (batch_size,  max_decode_step, max_query_length)
+        return scores
+
+    def forward_train(self, ctx, decoder_states):
+        # (batch_size,  max_decode_step, max_query_length)
+        scores = self.forward_scores(ctx, decoder_states)
+
+        # (batch_size,  max_decode_step, max_query_length)
         scores = self.log_softmax(scores)
 
+        # (batch_size,  max_decode_step, max_query_length)
         return scores
 
 
@@ -228,7 +257,7 @@ class Hyp:
             grammar = args[0]
             self.grammar = grammar
             self.tree = DecodeTree(grammar.root_node.type)
-            self.t=-1
+            self.t = -1
             self.hist_h = []
             self.log = ''
             self.has_grammar_error = False
