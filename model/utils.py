@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 def ifcond(cond, x_1, x_2):
     # ensure boolean
-    cond = cond.byte().float().unsqueeze(1)
+    cond = cond.byte().float()
     # check is it Tensor or Variable
     if not hasattr(cond, "backward"):
         cond = Var(cond, requires_grad=False)
@@ -21,7 +21,14 @@ def index_select_if_none(input, dim, index, ifnone):
 
 
 def from_list(ls, cuda):
-    tensor = torch.FloatTensor(ls)
+    tensor = torch.Tensor(ls)
+    if cuda:
+        tensor = tensor.cuda()
+    return tensor
+
+
+def from_long_list(ls, cuda):
+    tensor = torch.LongTensor(ls)
     if cuda:
         tensor = tensor.cuda()
     return tensor
@@ -48,12 +55,13 @@ def add_padding_and_stack(tensors, cuda, dim=0, max_length=None):
 
     result = []
     for tensor in tensors:
-        sh = tensor.data.shape
+        sh = list(tensor.data.shape)
         sh[dim] = max_length-sh[dim]
-        assert sh[dim] > 0
+        assert sh[dim] >= 0
 
-        padding = Var(zeros(*sh, cuda=cuda))
-        tensor = torch.cat([tensor, padding], dim=dim)
+        if sh[dim] > 0:
+            padding = Var(zeros(*sh, cuda=cuda))
+            tensor = torch.cat([tensor, padding], dim=dim)
         result.append(tensor)
 
     return torch.stack(result)

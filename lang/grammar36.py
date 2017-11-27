@@ -762,6 +762,11 @@ PY_AST_NODE_FIELDS = {
             'type': ast.expr,
             'is_list': True,
             'is_optional': False
+        },
+        'is_async': {
+            'type': int,
+            'is_list': False,
+            'is_optional': False
         }
     },
     'keyword': {

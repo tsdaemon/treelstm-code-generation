@@ -5,8 +5,9 @@ parser.add_argument('-data_dir', default='./preprocessed')
 parser.add_argument('-random_seed', default=181783, type=int)
 parser.add_argument('-output_dir', default='./results')
 
-# model's main configuration
+# experiment's main configuration
 parser.add_argument('-dataset', default='django', choices=['django', 'hs', 'bs'])
+parser.add_argument('-model', default='', type=str)
 
 # neural model's parameters
 parser.add_argument('-word_embed_dim', default=300, type=int)
@@ -51,9 +52,10 @@ parser.add_argument('-batch_size', default=10, type=int)
 parser.add_argument('-lr', default=0.001, type=float)
 parser.add_argument('-cuda', dest='cuda', action='store_true')
 parser.add_argument('-no_cuda', dest='cuda', action='store_false')
+parser.add_argument('-valid_metric', default='bleu')
 
 # decoding
-parser.add_argument('-beam_size', default=15, type=int)
+parser.add_argument('-beam_size', default=10, type=int)
 parser.add_argument('-max_query_length', default=200, type=int)
 parser.add_argument('-max_example_action_num', default=200, type=int)
 parser.add_argument('-decode_max_time_step', default=200, type=int)

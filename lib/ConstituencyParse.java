@@ -14,10 +14,8 @@ import edu.stanford.nlp.trees.Trees;
 import edu.stanford.nlp.trees.TreebankLanguagePack;
 import edu.stanford.nlp.trees.TypedDependency;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.StringReader;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -35,7 +33,9 @@ public class ConstituencyParse {
   private static final String PCFG_PATH = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
 
   public ConstituencyParse(String parentPath) throws IOException {
-    parentWriter = new BufferedWriter(new FileWriter(parentPath));
+    parentWriter = new BufferedWriter
+        (new OutputStreamWriter(new FileOutputStream(parentPath), StandardCharsets.UTF_8));
+
     parser = LexicalizedParser.loadModel(PCFG_PATH);
     binarizer = TreeBinarizer.simpleTreeBinarizer(
       parser.getTLPParams().headFinder(), parser.treebankLanguagePack());

@@ -57,13 +57,16 @@ if __name__ == '__main__':
     args.node_num = len(train_data.grammar.node_type_to_id)
 
     # load model
-    emb_file = os.path.join(data_dir, 'word_embeddings.pth')
-    emb = torch.load(emb_file)
-    if args.cuda:
-        emb = emb.cuda()
-    model = Tree2TreeModel(args, emb, train_data.terminal_vocab, train_data.grammar)
-    if args.cuda:
-        model = model.cuda()
+    if args.model:
+        model = torch.load(args.model)
+    else:
+        emb_file = os.path.join(data_dir, 'word_embeddings.pth')
+        emb = torch.load(emb_file)
+        if args.cuda:
+            emb = emb.cuda()
+        model = Tree2TreeModel(args, emb, train_data.terminal_vocab, train_data.grammar)
+        if args.cuda:
+            model = model.cuda()
 
     # create learner
     optimizer = optim.Adam(model.parameters(), lr=args.lr)

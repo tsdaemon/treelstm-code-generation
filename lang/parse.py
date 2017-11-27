@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from lang.astnode import ASTNode
 from lang.grammar import is_compositional_leaf, NODE_FIELD_BLACK_LIST, PythonGrammar
-from lang.grammar3 import PY_AST_NODE_FIELDS
+from lang.grammar36 import PY_AST_NODE_FIELDS
 from lang.util import typename
 from lang.unaryclosure import compressed_ast_to_normal
 from utils.general import init_logging

@@ -8,9 +8,8 @@ import edu.stanford.nlp.trees.TypedDependency;
 import edu.stanford.nlp.util.StringUtils;
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.StringReader;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -34,8 +33,11 @@ public class DependencyParse {
     String parentPath = props.getProperty("parentpath");
     String relPath = props.getProperty("relpath");
 
-    BufferedWriter parentWriter = new BufferedWriter(new FileWriter(parentPath));
-    BufferedWriter relWriter = new BufferedWriter(new FileWriter(relPath));
+    BufferedWriter parentWriter = new BufferedWriter
+        (new OutputStreamWriter(new FileOutputStream(parentPath), StandardCharsets.UTF_8));
+
+    BufferedWriter relWriter = new BufferedWriter
+        (new OutputStreamWriter(new FileOutputStream(relPath), StandardCharsets.UTF_8));
 
     MaxentTagger tagger = new MaxentTagger(TAGGER_MODEL);
     DependencyParser parser = DependencyParser.loadFromModelFile(PARSER_MODEL);

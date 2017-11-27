@@ -9,13 +9,15 @@ base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 lib_dir = os.path.join(base_dir, 'lib')
 data_dir = os.path.join(base_dir, 'data')
 
-delimiter = ';' if platform.system() == 'Windows' else ':'
+system = 'w' if platform.system() == 'Windows' else 'nw'
+
+delimiter = ';' if system == 'w' else ':'
 
 classpath = delimiter.join([
         lib_dir,
-        os.path.join(lib_dir, 'stanford-parser\stanford-parser.jar'),
-        os.path.join(lib_dir, 'stanford-parser\stanford-parser-3.5.1-models.jar'),
-        os.path.join(lib_dir, 'easyccg\easyccg.jar')])
+        os.path.join(lib_dir, 'stanford-parser/stanford-parser.jar'),
+        os.path.join(lib_dir, 'stanford-parser/stanford-parser-3.5.1-models.jar'),
+        os.path.join(lib_dir, 'easyccg/easyccg.jar')])
 
 
 def make_dirs(dirs):

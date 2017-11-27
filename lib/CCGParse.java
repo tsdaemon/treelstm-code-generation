@@ -10,10 +10,8 @@ import uk.ac.ed.easyccg.syntax.ParserAStar;
 import uk.ac.ed.easyccg.syntax.TaggerEmbeddings;
 import uk.ac.ed.easyccg.syntax.evaluation.Evaluate;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -123,9 +121,10 @@ public class CCGParse {
 
     System.err.println("Parsing...");
 
-    final ParserAStar.SuperTaggingResults supertaggingResults = new ParserAStar.SuperTaggingResults();
+    final SuperTaggingResults supertaggingResults = new SuperTaggingResults();
 
-    BufferedWriter parentWriter = new BufferedWriter(new FileWriter(parentPath));
+    BufferedWriter parentWriter = new BufferedWriter
+        (new OutputStreamWriter(new FileOutputStream(parentPath), StandardCharsets.UTF_8));
 
     Scanner stdin = new Scanner(System.in);
     int count = 0;

@@ -45,6 +45,7 @@ class Dataset(data.Dataset):
         enc_tree = deepcopy(self.query_trees[index])
 
         query = self.queries[index]
+        query_tokens = self.query_tokens[index]
 
         tgt_node_seq = self.tgt_node_seq[index]
         tgt_par_rule_seq = self.tgt_par_rule_seq[index]
@@ -53,9 +54,11 @@ class Dataset(data.Dataset):
         tgt_action_seq_type = self.tgt_action_seq_type[index]
 
         code = deepcopy(self.codes[index])
-        return enc_tree, query, \
+        code_tree = deepcopy(self.code_trees[index])
+
+        return enc_tree, query, query_tokens, \
                tgt_node_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq, tgt_action_seq_type, \
-               code
+               code, code_tree
 
     def get_batch(self, indices):
         trees = [deepcopy(self.query_trees[index]) for index in indices]
@@ -82,7 +85,7 @@ class Dataset(data.Dataset):
         self.queries = torch.stack(self.queries)
 
     def read_query(self, filename):
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             query_and_tokens = [self.read_query_line(line) for line in tqdm(f.readlines())]
         # unzip
         return tuple(zip(*query_and_tokens))

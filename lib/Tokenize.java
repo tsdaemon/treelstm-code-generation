@@ -4,9 +4,8 @@ import edu.stanford.nlp.process.PTBTokenizer;
 import edu.stanford.nlp.process.WordTokenFactory;
 import edu.stanford.nlp.util.StringUtils;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.StringReader;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -23,7 +22,8 @@ public class Tokenize {
 
     String tokPath = props.getProperty("tokpath");
 
-    BufferedWriter tokWriter = new BufferedWriter(new FileWriter(tokPath));
+    BufferedWriter tokWriter = new BufferedWriter
+        (new OutputStreamWriter(new FileOutputStream(tokPath), StandardCharsets.UTF_8));
 
     Scanner stdin = new Scanner(System.in);
     int count = 0;

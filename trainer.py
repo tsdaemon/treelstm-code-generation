@@ -1,9 +1,16 @@
 import torch
 from tqdm import tqdm
-from torch.autograd import Variable as Var
 import logging
+import astor
+from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
+import os
+import numpy as np
+import math
+import shutil
 
+from lang.parse import decode_tree_to_python_ast
 from utils.general import get_batches
+from utils.eval import evaluate_decode_result
 
 
 class Trainer(object):
@@ -25,43 +32,107 @@ class Trainer(object):
             mean_loss = self.train(train_data, epoch)
             logging.info('\nEpoch {} training finished, mean loss: {}.'.format(epoch+1, mean_loss))
 
+            epoch_dir = os.path.join(results_dir, str(epoch))
+            if os.path.exists(epoch_dir):
+                shutil.rmtree(epoch_dir)
+            os.mkdir(epoch_dir)
+            model_path = os.path.join(epoch_dir, 'model.pth')
+            logging.info('\nSaving model at {}.'.format(model_path))
+            torch.save(self.model, model_path)
+
+            bleu, accuracy = self.validate(dev_data, epoch, epoch_dir)
+            logging.info('\nEpoch {} validation finished, bleu: {}, accuracy {}.'.format(
+                epoch + 1, bleu, accuracy))
+
+            # if len(history_valid_acc) == 0 or accuracy > np.array(history_valid_acc).max():
+            #     best_model_by_acc = self.model.pull_params()
+            history_valid_acc.append(accuracy)
+
+            # if len(history_valid_bleu) == 0 or bleu > np.array(history_valid_bleu).max():
+            #     best_model_by_bleu = self.model.pull_params()
+            history_valid_bleu.append(bleu)
+
+            val_perf = eval(self.config.valid_metric)
+
+            if len(history_valid_perf) == 0 or val_perf > np.array(history_valid_perf).max():
+                patience_counter = 0
+                logging.info('found best model on epoch {}'.format(epoch))
+            else:
+                patience_counter += 1
+                logging.info('hitting patience_counter: %d', patience_counter)
+                if patience_counter >= self.config.train_patience:
+                    logging.info('Early Stop!')
+                    break
+
+            history_valid_perf.append(val_perf)
+
     def train(self, dataset, epoch):
         self.model.train()
         self.optimizer.zero_grad()
         total_loss = 0.0
         batch_size = self.config.batch_size
         indices = torch.randperm(len(dataset))
-        total_batches = len(indices)/batch_size
+        total_batches = math.floor(len(indices)/batch_size)+1
         batches = get_batches(indices, batch_size)
 
         for i, batch in tqdm(enumerate(batches), desc='Training epoch '+str(epoch+1)+'', total=total_batches):
             trees, queries, tgt_node_seq, tgt_par_rule_seq, tgt_par_t_seq, \
-            tgt_action_seq, tgt_action_seq_type, _ = dataset.get_batch(batch)
+            tgt_action_seq, tgt_action_seq_type = dataset.get_batch(batch)
 
             loss = self.model.forward_train(trees, queries, tgt_node_seq, tgt_action_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq_type)
+            assert loss > 0, "NLL can not be less than zero"
             total_loss += loss.data[0]
             loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
             logging.debug('Batch {}, loss {}'.format(i+1, loss[0]))
 
-        return total_loss/len(dataset)
+        return total_loss/(len(indices)/batch_size)
 
-    def validate(self, dataset, epoch):
+    def validate(self, dataset, epoch, out_dir):
         self.model.eval()
-        loss = 0
-        predictions = []
-        for idx in tqdm(range(len(dataset)), desc='Testing epoch '+str(epoch)+''):
-            enc_tree, dec_tree, input, code = dataset[idx]
-            input = Var(input, volatile=True)
-            if self.config.cuda:
-                input = input.cuda()
-            output = self.model(enc_tree, input)
+        cum_bleu, cum_acc, cum_oracle_bleu, cum_oracle_acc = 0.0, 0.0, 0.0, 0.0
+        all_references, all_predictions = [], []
 
-            decode_results = decoder.decode_python_dataset(self.model, self.val_data, verbose=False)
-            bleu, accuracy = evaluation.evaluate_decode_results(self.val_data, decode_results, verbose=False)
+        for idx in tqdm(range(len(dataset)), desc='Testing epoch '+str(epoch+1)+''):
+            enc_tree, query, query_tokens, \
+            _, _, _, _, _, \
+            code, code_tree = dataset[idx]
 
-            err = self.criterion(output, dec_tree)
-            loss += err.data[0]
-            predictions.append(output)
-        return loss/len(dataset), predictions
+            cand_list = self.model(enc_tree, query, query_tokens)
+            candidats = []
+            for cid, cand in enumerate(cand_list[:self.config.beam_size]):
+                try:
+                    ast_tree = decode_tree_to_python_ast(cand.tree)
+                    code = astor.to_source(ast_tree)
+                    candidats.append((cid, cand, ast_tree, code))
+                except:
+                    logging.error("Exception in converting tree to code:"
+                                  "id: {}, beam pos: {}".format(idx, cid))
+
+            bleu, oracle_bleu, acc, oracle_acc, \
+            refer_tokens_for_bleu, pred_tokens_for_bleu = evaluate_decode_result(
+                (enc_tree, query, code_tree, code),
+                idx, candidats, out_dir, self.config.dataset)
+
+            cum_bleu += bleu
+            cum_oracle_bleu += oracle_bleu
+            cum_acc += acc
+
+            all_references.append([refer_tokens_for_bleu])
+            all_predictions.append(pred_tokens_for_bleu)
+
+        cum_bleu /= len(dataset)
+        cum_acc /= len(dataset)
+        cum_oracle_bleu /= len(dataset)
+        cum_oracle_acc /= len(dataset)
+
+        # logging.info('corpus level bleu: %f',
+        #              corpus_bleu(all_references, all_predictions,
+        #                          smoothing_function=SmoothingFunction().method3))
+        # logging.info('sentence level bleu: %f', cum_bleu)
+        # logging.info('accuracy: %f', cum_acc)
+        # logging.info('oracle bleu: %f', cum_oracle_bleu)
+        # logging.info('oracle accuracy: %f', cum_oracle_acc)
+
+        return cum_bleu, cum_acc
