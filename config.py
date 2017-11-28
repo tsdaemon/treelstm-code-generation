@@ -8,6 +8,7 @@ parser.add_argument('-output_dir', default='./results')
 # experiment's main configuration
 parser.add_argument('-dataset', default='django', choices=['django', 'hs', 'bs'])
 parser.add_argument('-model', default='', type=str)
+parser.add_argument('-mode', default='train', choices=['train', 'validate'])
 
 # neural model's parameters
 parser.add_argument('-word_embed_dim', default=300, type=int)

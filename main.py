@@ -5,6 +5,7 @@ import sys
 import torch
 import torch.optim as optim
 import random
+# from tensorboardX import SummaryWriter
 
 from utils.general import init_logging
 from model.x2x import Tree2TreeModel
@@ -33,8 +34,8 @@ if __name__ == '__main__':
     # prepare dirs
     data_dir = os.path.join(args.data_dir, args.dataset)
     output_dir = os.path.join(args.output_dir, args.dataset)
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     # start logging
     init_logging(os.path.join(output_dir, 'parser.log'), logging.INFO)
@@ -58,8 +59,10 @@ if __name__ == '__main__':
 
     # load model
     if args.model:
+        logging.info('Loading model: {}'.format(args.model))
         model = torch.load(args.model)
     else:
+        logging.info('Creating new model'.format(args.model))
         emb_file = os.path.join(data_dir, 'word_embeddings.pth')
         emb = torch.load(emb_file)
         if args.cuda:
@@ -71,4 +74,14 @@ if __name__ == '__main__':
     # create learner
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     trainer = Trainer(model, args, optimizer)
-    trainer.train_all(train_data, dev_data, test_data, output_dir)
+
+    if args.mode == 'train':
+        trainer.train_all(train_data, dev_data, test_data, output_dir)
+    elif args.mode == 'validate':
+        trainer.validate(dev_data, 1, os.path.join(output_dir, 'tmp'))
+    else:
+        raise Exception("Unknown mode!")
+
+    # writer = SummaryWriter()
+    # trainer.visualize(train_data, writer)
+    # writer.close()

@@ -25,20 +25,20 @@ def evaluate_decode_result(data,
                            out_dir,
                            data_type):
 
-    enc_tree, query, ref_code_tree, ref_code = data
+    enc_tree, query, query_tokens, ref_code_tree, ref_code = data
 
-    f = open(os.path.join(out_dir, 'exact_match.txt'), 'w')
+    f = open(os.path.join(out_dir, 'exact_match.txt'), 'a')
     exact_match_ids = []
-    f_decode = open(os.path.join(out_dir, 'decode_results.txt'), 'w')
+    f_decode = open(os.path.join(out_dir, 'decode_results.txt'), 'a')
 
     # eid_to_annot = dict()
     # if config.data_type == 'django':
     #     for raw_id, line in enumerate(open(DJANGO_ANNOT_FILE)):
     #         eid_to_annot[raw_id] = line.strip()
 
-    f_bleu_eval_ref = open(os.path.join(out_dir, 'ref.txt'), 'w')
-    f_bleu_eval_hyp = open(os.path.join(out_dir, 'hyp.txt'), 'w')
-    f_generated_code = open(os.path.join(out_dir, 'geneated_code.txt'), 'w')
+    f_bleu_eval_ref = open(os.path.join(out_dir, 'ref.txt'), 'a')
+    f_bleu_eval_hyp = open(os.path.join(out_dir, 'hyp.txt'), 'a')
+    f_generated_code = open(os.path.join(out_dir, 'geneated_code.txt'), 'a')
 
     oracle_bleu = 0.0
     oracle_acc = 0.0
@@ -111,7 +111,7 @@ def evaluate_decode_result(data,
     ngram_weights = [0.25] * min(4, len(refer_tokens_for_bleu))
     bleu = sentence_bleu([refer_tokens_for_bleu], pred_tokens_for_bleu, weights=ngram_weights, smoothing_function=sm.method3)
 
-    logging.info('raw_id: {}, bleu_score: {}'.format(result_id, bleu))
+    #logging.info('raw_id: {}, bleu_score: {}'.format(result_id, bleu))
 
     f_decode.write('-' * 60 + '\n')
     f_decode.write('example_id: %d\n' % result_id)
@@ -120,7 +120,7 @@ def evaluate_decode_result(data,
     # if config.data_type == 'django':
     #     f_decode.write(eid_to_annot[example.raw_id] + '\n')
     # elif config.data_type == 'hs':
-    f_decode.write(' '.join(query) + '\n')
+    f_decode.write(' '.join(query_tokens) + '\n')
     f_bleu_eval_ref.write(' '.join(refer_tokens_for_bleu) + '\n')
     f_bleu_eval_hyp.write(' '.join(pred_tokens_for_bleu) + '\n')
     f_decode.write('canonicalized reference: \n')

@@ -2,7 +2,6 @@ import torch
 from tqdm import tqdm
 import logging
 import astor
-from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
 import os
 import numpy as np
 import math
@@ -11,6 +10,7 @@ import shutil
 from lang.parse import decode_tree_to_python_ast
 from utils.general import get_batches
 from utils.eval import evaluate_decode_result
+
 
 
 class Trainer(object):
@@ -30,18 +30,18 @@ class Trainer(object):
         best_model_params = best_model_by_acc = best_model_by_bleu = None
         for epoch in range(max_epoch):
             mean_loss = self.train(train_data, epoch)
-            logging.info('\nEpoch {} training finished, mean loss: {}.'.format(epoch+1, mean_loss))
+            logging.info('Epoch {} training finished, mean loss: {}.'.format(epoch+1, mean_loss))
 
             epoch_dir = os.path.join(results_dir, str(epoch))
             if os.path.exists(epoch_dir):
                 shutil.rmtree(epoch_dir)
             os.mkdir(epoch_dir)
             model_path = os.path.join(epoch_dir, 'model.pth')
-            logging.info('\nSaving model at {}.'.format(model_path))
+            logging.info('Saving model at {}.'.format(model_path))
             torch.save(self.model, model_path)
 
             bleu, accuracy = self.validate(dev_data, epoch, epoch_dir)
-            logging.info('\nEpoch {} validation finished, bleu: {}, accuracy {}.'.format(
+            logging.info('Epoch {} validation finished, bleu: {}, accuracy {}.'.format(
                 epoch + 1, bleu, accuracy))
 
             # if len(history_valid_acc) == 0 or accuracy > np.array(history_valid_acc).max():
@@ -54,15 +54,16 @@ class Trainer(object):
 
             val_perf = eval(self.config.valid_metric)
 
-            if len(history_valid_perf) == 0 or val_perf > np.array(history_valid_perf).max():
-                patience_counter = 0
-                logging.info('found best model on epoch {}'.format(epoch))
-            else:
-                patience_counter += 1
-                logging.info('hitting patience_counter: %d', patience_counter)
-                if patience_counter >= self.config.train_patience:
-                    logging.info('Early Stop!')
-                    break
+            if val_perf > 10.0:
+                if val_perf > np.array(history_valid_perf).max():
+                    patience_counter = 0
+                    logging.info('Found best model on epoch {}'.format(epoch))
+                else:
+                    patience_counter += 1
+                    logging.info('Hitting patience_counter: %d', patience_counter)
+                    if patience_counter >= self.config.train_patience:
+                        logging.info('Early Stop!')
+                        break
 
             history_valid_perf.append(val_perf)
 
@@ -81,13 +82,14 @@ class Trainer(object):
 
             loss = self.model.forward_train(trees, queries, tgt_node_seq, tgt_action_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq_type)
             assert loss > 0, "NLL can not be less than zero"
+
             total_loss += loss.data[0]
             loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
             logging.debug('Batch {}, loss {}'.format(i+1, loss[0]))
 
-        return total_loss/(len(indices)/batch_size)
+        return total_loss/len(dataset)
 
     def validate(self, dataset, epoch, out_dir):
         self.model.eval()
@@ -97,7 +99,7 @@ class Trainer(object):
         for idx in tqdm(range(len(dataset)), desc='Testing epoch '+str(epoch+1)+''):
             enc_tree, query, query_tokens, \
             _, _, _, _, _, \
-            code, code_tree = dataset[idx]
+            ref_code, ref_code_tree = dataset[idx]
 
             cand_list = self.model(enc_tree, query, query_tokens)
             candidats = []
@@ -112,7 +114,7 @@ class Trainer(object):
 
             bleu, oracle_bleu, acc, oracle_acc, \
             refer_tokens_for_bleu, pred_tokens_for_bleu = evaluate_decode_result(
-                (enc_tree, query, code_tree, code),
+                (enc_tree, query, query_tokens, ref_code_tree, ref_code),
                 idx, candidats, out_dir, self.config.dataset)
 
             cum_bleu += bleu
@@ -136,3 +138,19 @@ class Trainer(object):
         # logging.info('oracle accuracy: %f', cum_oracle_acc)
 
         return cum_bleu, cum_acc
+
+    def visualize(self, dataset, writer):
+        self.model.train()
+        self.optimizer.zero_grad()
+        batch_size = 2
+        indices = torch.randperm(len(dataset))
+        batch = next(get_batches(indices, batch_size))
+
+        trees, queries, tgt_node_seq, tgt_par_rule_seq, tgt_par_t_seq, \
+        tgt_action_seq, tgt_action_seq_type = dataset.get_batch(batch)
+
+        loss = self.model.forward_train(trees, queries, tgt_node_seq, tgt_action_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq_type)
+        assert loss > 0, "NLL can not be                                                                                                                                                                                                                                                                                                                                                                                                                    less than zero"
+
+        loss.backward()
+        writer.add_graph(self.model, loss)

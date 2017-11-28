@@ -107,7 +107,7 @@ def write_grammar(parse_trees, out_file):
     return grammar
 
 
-def write_terminal_tokens_vocab(grammar, parse_trees, out_file):
+def write_terminal_tokens_vocab(grammar, parse_trees, out_file, min_freq=2):
     terminal_token_seq = []
 
     for parse_tree in tqdm(parse_trees):
@@ -121,7 +121,7 @@ def write_terminal_tokens_vocab(grammar, parse_trees, out_file):
                 for terminal_token in terminal_tokens:
                     terminal_token_seq.append(terminal_token)
 
-    terminal_vocab = build_vocab_from_items(terminal_token_seq, False)
+    terminal_vocab = build_vocab_from_items(terminal_token_seq, False, min_freq)
     save_vocab(out_file, terminal_vocab)
 
 
@@ -161,9 +161,8 @@ if __name__ == '__main__':
     train_dir = os.path.join(hs_dir, 'train')
     dev_dir = os.path.join(hs_dir, 'dev')
     test_dir = os.path.join(hs_dir, 'test')
-    # make_dirs([train_dir, dev_dir, test_dir])
+    make_dirs([train_dir, dev_dir, test_dir])
 
-    # copy dataset
     # shutil.copy(os.path.join(hs_source_dir, 'dev_hs.in'), os.path.join(dev_dir, 'dev.in'))
     # shutil.copy(os.path.join(hs_source_dir, 'dev_hs.out'), os.path.join(dev_dir, 'dev.out'))
     # shutil.copy(os.path.join(hs_source_dir, 'train_hs.in'), os.path.join(train_dir, 'train.in'))
@@ -191,29 +190,24 @@ if __name__ == '__main__':
     # save_vocab(os.path.join(hs_dir, 'vocab.unk.txt'), vocab_unk)
     #
     # print('Build vocab embeddings')
-    # vocab = Vocab(filename=os.path.join(hs_dir, 'vocab.txt'), data=[Constants.PAD_WORD, Constants.UNK_WORD, Constants.BOS_WORD, Constants.EOS_WORD])
+    # vocab = Vocab(filename=os.path.join(hs_dir, 'vocab.txt'), data=[Constants.UNK_WORD, Constants.EOS_WORD])
     # emb_file = os.path.join(hs_dir, 'word_embeddings.pth')
     # glove_file = os.path.join(data_dir, 'glove/glove.840B.300d')
     # # load glove embeddings and vocab
     # glove_vocab, glove_emb = load_word_vectors(glove_file)
     # emb = torch.Tensor(vocab.size(), glove_emb.size(1)).normal_(-0.05, 0.05)
     # # zero out the embeddings for padding and other special words if they are absent in vocab
-    # for idx, item in enumerate([Constants.PAD_WORD, Constants.UNK_WORD, Constants.BOS_WORD, Constants.EOS_WORD]):
+    # for idx, item in enumerate([Constants.UNK_WORD, Constants.EOS_WORD]):
     #     emb[idx].zero_()
     # for word in vocab.labelToIdx.keys():
     #     if glove_vocab.getIndex(word):
     #         emb[vocab.getIndex(word)] = glove_emb[glove_vocab.getIndex(word)]
     # torch.save(emb, emb_file)
-    #
-    # # print('Parsing descriptions for variables')
-    # # parse_for_variables(os.path.join(dev_dir, 'dev.in.tokens'), vocab_unk)
-    # # parse_for_variables(os.path.join(train_dir, 'train.in.tokens'), vocab_unk)
-    # # parse_for_variables(os.path.join(test_dir, 'test.in.tokens'), vocab_unk)
-    #
+
     # print('Parsing descriptions trees')
-    # parse(os.path.join(dev_dir, 'dev.in.tokens'), os.path.join(hs_dir, 'vocab.unk.txt'))
-    # parse(os.path.join(train_dir, 'train.in.tokens'), os.path.join(hs_dir, 'vocab.unk.txt'))
-    # parse(os.path.join(test_dir, 'test.in.tokens'), os.path.join(hs_dir, 'vocab.unk.txt'))
+    # parse(os.path.join(dev_dir, 'dev.in.tokens'))
+    # parse(os.path.join(train_dir, 'train.in.tokens'))
+    # parse(os.path.join(test_dir, 'test.in.tokens'))
 
     print('Parsing output code')
     parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'), os.path.join(dev_dir, 'dev.out.bin'))
@@ -233,5 +227,5 @@ if __name__ == '__main__':
     grammar = write_grammar(parse_trees, os.path.join(hs_dir, 'grammar.txt'))
 
     print('Creating terminal vocabulary')
-    write_terminal_tokens_vocab(grammar, parse_trees, os.path.join(hs_dir, 'terminal_vocab.txt'))
+    write_terminal_tokens_vocab(grammar, parse_trees, os.path.join(hs_dir, 'terminal_vocab.txt'), min_freq=3)
 

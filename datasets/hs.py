@@ -1,5 +1,6 @@
 import os
 import torch
+import logging
 
 from datasets.dataset import Dataset, parents_prefix
 import Constants
@@ -11,33 +12,33 @@ from config import parser
 def load_dataset(config, force_regenerate=False):
     data_dir = config.data_dir
     hs_dir = os.path.join(data_dir, 'hs')
-    print('='*80)
-    print('Loading dataset from folder ' + hs_dir)
-    print('='*80)
+    logging.info('='*80)
+    logging.info('Loading dataset from folder ' + hs_dir)
+    logging.info('='*80)
     train, test, dev = None, None, None
 
     train_dir = os.path.join(hs_dir, 'train')
     train_file = os.path.join(train_dir, 'train.pth')
     if not force_regenerate and os.path.isfile(train_file):
-        print('Train dataset found, loading...')
+        logging.info('Train dataset found, loading...')
         train = torch.load(train_file)
 
     test_dir = os.path.join(hs_dir, 'test')
     test_file = os.path.join(test_dir, 'test.pth')
     if not force_regenerate and os.path.isfile(test_file):
-        print('Test dataset found, loading...')
+        logging.info('Test dataset found, loading...')
         test = torch.load(test_file)
 
     dev_dir = os.path.join(hs_dir, 'dev')
     dev_file = os.path.join(dev_dir, 'dev.pth')
     if not force_regenerate and os.path.isfile(dev_file):
-        print('Dev dataset found, loading...')
+        logging.info('Dev dataset found, loading...')
         dev = torch.load(dev_file)
 
     if train is None or test is None or dev is None:
         grammar = deserialize_from_file(os.path.join(hs_dir, 'grammar.txt.bin'))
-        terminal_vocab = Vocab(os.path.join(hs_dir, 'terminal_vocab.txt'), data=[Constants.PAD_WORD, Constants.UNK_WORD, Constants.BOS_WORD, Constants.EOS_WORD])
-        vocab = Vocab(os.path.join(hs_dir, 'vocab.txt'), data=[Constants.PAD_WORD, Constants.UNK_WORD, Constants.BOS_WORD, Constants.EOS_WORD])
+        terminal_vocab = Vocab(os.path.join(hs_dir, 'terminal_vocab.txt'), data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
+        vocab = Vocab(os.path.join(hs_dir, 'vocab.txt'), data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
 
         if test is None:
             print('Test dataset not found, generating...')

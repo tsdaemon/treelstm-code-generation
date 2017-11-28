@@ -73,8 +73,6 @@ class Tree2TreeModel(nn.Module):
         # (decoder_hidden_dim)
         h = h.squeeze(0)
         c = c.squeeze(0)
-        # (1, max_query_length, decoder_hidden_dim)
-        ctx = ctx
 
         completed_hyps = []
         completed_hyp_num = 0
@@ -317,7 +315,7 @@ class Tree2TreeModel(nn.Module):
             if live_hyp_num < 1:
                 break
 
-            hyp_samples = new_hyp_samples
+            hyp_samples = new_hyp_samples[:live_hyp_num]
             # hyp_samples = sorted(new_hyp_samples, key=lambda x: x.score, reverse=True)[:live_hyp_num]
 
         completed_hyps = sorted(completed_hyps, key=lambda x: x.score, reverse=True)

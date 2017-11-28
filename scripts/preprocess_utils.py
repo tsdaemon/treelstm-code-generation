@@ -38,13 +38,17 @@ def build_vocab_from_token_files(filepaths, lower=True):
     return vocab
 
 
-def build_vocab_from_items(items, lower=True):
-    vocab = set()
+def build_vocab_from_items(items, lower=True, min_frequency=1):
+    freq_dict = {}
     print('Building vocabulary from items...')
     for item in tqdm(items):
         if lower:
             item = item.lower()
-        vocab |= {item}
+        if item in freq_dict:
+            freq_dict[item] += 1
+        else:
+            freq_dict[item] = 1
+    vocab = {k for k, v in freq_dict.items() if v >= min_frequency}
     return vocab
 
 
@@ -76,21 +80,7 @@ def tokenize(filepath):
     os.system(cmd)
 
 
-def parse_for_variables(filepath, vocab_unk):
-    print('Parsing variables ' + filepath)
-    dirpath = os.path.dirname(filepath)
-    filepre = os.path.splitext(os.path.basename(filepath))[0]
-    varpath = os.path.join(dirpath, filepre + '.variables')
-    with open(filepath, 'r') as datafile, \
-         open(varpath, 'w') as vfile:
-        for line in datafile:
-            tokens = set(line.split(" "))
-            variables = tokens & vocab_unk
-            ln = " ".join(variables) + "\n"
-            vfile.write(ln)
-
-
-def dependency_parse(filepath, vocabpath):
+def dependency_parse(filepath):
     print('Dependency parsing ' + filepath)
     dirpath = os.path.dirname(filepath)
     filepre = os.path.splitext(os.path.basename(filepath))[0]
@@ -101,7 +91,7 @@ def dependency_parse(filepath, vocabpath):
     os.system(cmd)
 
 
-def constituency_parse(filepath, vocabpath):
+def constituency_parse(filepath):
     print('Constituency parsing ' + filepath)
     dirpath = os.path.dirname(filepath)
     filepre = os.path.splitext(os.path.basename(filepath))[0]
@@ -111,7 +101,7 @@ def constituency_parse(filepath, vocabpath):
     os.system(cmd)
 
 
-def ccg_parse(filepath, vocabpath):
+def ccg_parse(filepath):
     print('CCG parsing ' + filepath)
     dirpath = os.path.dirname(filepath)
     filepre = os.path.splitext(os.path.basename(filepath))[0]
@@ -121,10 +111,10 @@ def ccg_parse(filepath, vocabpath):
     os.system(cmd)
 
 
-def parse(filepath, vocabpath):
-    dependency_parse(filepath, vocabpath)
-    constituency_parse(filepath, vocabpath)
-    ccg_parse(filepath, vocabpath)
+def parse(filepath):
+    dependency_parse(filepath)
+    constituency_parse(filepath)
+    ccg_parse(filepath)
 
 
 # loading GLOVE word vectors
