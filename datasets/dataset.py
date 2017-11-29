@@ -53,8 +53,8 @@ class Dataset(data.Dataset):
         tgt_action_seq = self.tgt_action_seq[index]
         tgt_action_seq_type = self.tgt_action_seq_type[index]
 
-        code = self.codes[index].clone()
-        code_tree = self.code_trees[index].clone()
+        code = deepcopy(self.codes[index])
+        code_tree = deepcopy(self.code_trees[index])
 
         return enc_tree, query, query_tokens, \
                tgt_node_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq, tgt_action_seq_type, \
