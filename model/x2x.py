@@ -141,7 +141,13 @@ class Tree2TreeModel(nn.Module):
 
             new_hyp_samples = []
 
-            # move probabilities to numpy
+            # move probabilities to cpu and numpy
+            if self.config.cuda:
+                rule_prob = rule_prob.cpu()
+                gen_action_prob = gen_action_prob.cpu()
+                vocab_prob = vocab_prob.cpu()
+                copy_prob = copy_prob.cpu()
+
             rule_prob = rule_prob.data.numpy()
             gen_action_prob = gen_action_prob.data.numpy()
             vocab_prob = vocab_prob.data.numpy()
