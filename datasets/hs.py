@@ -22,18 +22,21 @@ def load_dataset(config, force_regenerate=False):
     if not force_regenerate and os.path.isfile(train_file):
         logging.info('Train dataset found, loading...')
         train = torch.load(train_file)
+        train.config = config
 
     test_dir = os.path.join(hs_dir, 'test')
     test_file = os.path.join(test_dir, 'test.pth')
     if not force_regenerate and os.path.isfile(test_file):
         logging.info('Test dataset found, loading...')
         test = torch.load(test_file)
+        test.config = config
 
     dev_dir = os.path.join(hs_dir, 'dev')
     dev_file = os.path.join(dev_dir, 'dev.pth')
     if not force_regenerate and os.path.isfile(dev_file):
         logging.info('Dev dataset found, loading...')
         dev = torch.load(dev_file)
+        dev.config = config
 
     if train is None or test is None or dev is None:
         grammar = deserialize_from_file(os.path.join(hs_dir, 'grammar.txt.bin'))

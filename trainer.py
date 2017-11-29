@@ -12,7 +12,6 @@ from utils.general import get_batches
 from utils.eval import evaluate_decode_result
 
 
-
 class Trainer(object):
     def __init__(self, model, config, optimizer):
         self.config = config
@@ -73,6 +72,8 @@ class Trainer(object):
         total_loss = 0.0
         batch_size = self.config.batch_size
         indices = torch.randperm(len(dataset))
+        if self.config.cuda:
+            indices = indices.cuda()
         total_batches = math.floor(len(indices)/batch_size)+1
         batches = get_batches(indices, batch_size)
 
@@ -150,7 +151,7 @@ class Trainer(object):
         tgt_action_seq, tgt_action_seq_type = dataset.get_batch(batch)
 
         loss = self.model.forward_train(trees, queries, tgt_node_seq, tgt_action_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq_type)
-        assert loss > 0, "NLL can not be                                                                                                                                                                                                                                                                                                                                                                                                                    less than zero"
+        assert loss > 0, "NLL can not be less than zero"
 
         loss.backward()
         writer.add_graph(self.model, loss)
