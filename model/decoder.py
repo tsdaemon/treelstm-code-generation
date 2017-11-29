@@ -68,7 +68,7 @@ class CondAttLSTM(nn.Module):
         self.dropout = nn.AlphaDropout(p=config.dropout)
         self.softmax = nn.Softmax(dim=-1);
 
-        self.cuda = config.cuda
+        self.is_cuda = config.cuda
         self.parent_hidden_state_feed = config.parent_hidden_state_feed
         self.config = config
 
@@ -133,7 +133,7 @@ class CondAttLSTM(nn.Module):
         if t and self.config.tree_attention:
             h_ctx_vec = _attention_over_history()
         else:
-            h_ctx_vec = Var(zeros_like(h, self.cuda))
+            h_ctx_vec = Var(zeros_like(h, self.is_cuda))
 
         if not self.config.parent_hidden_state_feed:
             par_h *= 0.
@@ -175,7 +175,7 @@ class CondAttLSTM(nn.Module):
                 # (batch_size, hidden_dim)
                 par_h = torch.gather(output_h, 1, index).squeeze(1)
             else:
-                par_h = Var(zeros_like(h, self.cuda))
+                par_h = Var(zeros_like(h, self.is_cuda))
 
             xi, xf, xo, xc = Xi[:, t, :].squeeze(1), \
                              Xf[:, t, :].squeeze(1), \

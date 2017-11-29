@@ -17,7 +17,7 @@ class Tree2TreeModel(nn.Module):
         super().__init__()
 
         self.config = config
-        self.cuda = config.cuda
+        self.is_cuda = config.cuda
 
         self.terminal_vocab = terminal_vocab
         self.grammar = grammar
@@ -81,7 +81,7 @@ class Tree2TreeModel(nn.Module):
         root_hyp = Hyp(self.grammar)
         root_hyp.state = h
         root_hyp.cell = c
-        root_hyp.action_embed = Var(zeros(self.config.rule_embed_dim, cuda=self.cuda), requires_grad=False)
+        root_hyp.action_embed = Var(zeros(self.config.rule_embed_dim, cuda=self.is_cuda), requires_grad=False)
         root_hyp.node_id = self.grammar.get_node_type_id(root_hyp.tree.type)
         root_hyp.parent_rule_id = -1
 
@@ -108,7 +108,7 @@ class Tree2TreeModel(nn.Module):
             c = torch.stack([hyp.cell for hyp in hyp_samples])
 
             # (hyp_num, max_time_step, decoder_hidden_dim)
-            hist_h = Var(zeros(hyp_num, self.config.decode_max_time_step, self.config.decoder_hidden_dim, cuda=self.cuda), requires_grad=False)
+            hist_h = Var(zeros(hyp_num, self.config.decode_max_time_step, self.config.decoder_hidden_dim, cuda=self.is_cuda), requires_grad=False)
 
             if t > 0:
                 for i, hyp in enumerate(hyp_samples):
@@ -119,9 +119,9 @@ class Tree2TreeModel(nn.Module):
             # (hyp_num, decoder_hidden_dim)
             prev_action_embed = torch.stack([hyp.action_embed for hyp in hyp_samples])
             # (hyp_num)
-            node_id = from_long_list([hyp.node_id for hyp in hyp_samples], self.cuda)
-            parent_rule_id = from_long_list([hyp.parent_rule_id for hyp in hyp_samples], self.cuda)
-            parent_t = from_long_list([hyp.get_action_parent_t() for hyp in hyp_samples], self.cuda)
+            node_id = from_long_list([hyp.node_id for hyp in hyp_samples], self.is_cuda)
+            parent_rule_id = from_long_list([hyp.parent_rule_id for hyp in hyp_samples], self.is_cuda)
+            parent_t = from_long_list([hyp.get_action_parent_t() for hyp in hyp_samples], self.is_cuda)
 
             # (hyp_num, 1, decoder_hidden_dim)
             index = Var(parent_t.unsqueeze(1).unsqueeze(2).expand(-1, -1, self.config.decoder_hidden_dim), requires_grad=False)
@@ -340,7 +340,7 @@ class Tree2TreeModel(nn.Module):
             ctx.append(ctx1)
 
         # all ctx must be one length to be stacked
-        ctx = add_padding_and_stack(ctx, self.cuda)
+        ctx = add_padding_and_stack(ctx, self.is_cuda)
         h = torch.stack(h)
         c = torch.stack(h)
 
@@ -356,7 +356,7 @@ class Tree2TreeModel(nn.Module):
         node_embed = self.node_embedding[node_id]
 
         # (batch_size, decoder_hidden_dim)
-        empty_state = Var(zeros(par_rule_id.shape[0], self.config.rule_embed_dim, cuda=self.cuda), requires_grad=False)
+        empty_state = Var(zeros(par_rule_id.shape[0], self.config.rule_embed_dim, cuda=self.is_cuda), requires_grad=False)
         par_rule_embed = index_select_if_none(self.rule_gen_softmax.weight,
                                               0, par_rule_id, empty_state)
 
@@ -426,11 +426,11 @@ class Tree2TreeModel(nn.Module):
         # parent rule application embeddings
         # (batch_size, max_example_action_num, rule_embed_dim)
         tgt_par_rule_embed = Var(
-            zeros(tgt_par_rule_seq.shape[0], tgt_par_rule_seq.shape[1], self.config.rule_embed_dim, cuda=self.cuda))
+            zeros(tgt_par_rule_seq.shape[0], tgt_par_rule_seq.shape[1], self.config.rule_embed_dim, cuda=self.is_cuda))
         tgt_par_rule_embed[:, 1:, :] = rule_embedding_W[tgt_par_rule_seq[:, 1:]]
 
         # (batch_size, max_example_action_num, rule_embed_dim)
-        tgt_action_seq_embed_tm1 = Var(zeros_like(tgt_action_seq_embed, self.cuda))
+        tgt_action_seq_embed_tm1 = Var(zeros_like(tgt_action_seq_embed, self.is_cuda))
         tgt_action_seq_embed_tm1[:, 1:, :] = tgt_action_seq_embed[:, :-1, :]
 
         # (batch_size, max_example_action_num, rule_embed_dim + node_embed_dim + rule_embed_dim)
