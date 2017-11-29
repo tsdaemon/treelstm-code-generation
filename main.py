@@ -65,8 +65,6 @@ if __name__ == '__main__':
         logging.info('Creating new model'.format(args.model))
         emb_file = os.path.join(data_dir, 'word_embeddings.pth')
         emb = torch.load(emb_file)
-        if args.cuda:
-            emb = emb.cuda()
         model = Tree2TreeModel(args, emb, train_data.terminal_vocab, train_data.grammar)
         if args.cuda:
             model = model.cuda()
