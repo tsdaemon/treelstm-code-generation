@@ -29,8 +29,8 @@ class Dataset(data.Dataset):
         self.size = self.load_output(data_dir, file_name)
         self.init_data_matrices()
 
-    def prepare_torch(self):
-        if self.config.cuda:
+    def prepare_torch(self, cuda):
+        if cuda:
             self.queries = self.queries.cuda()
             self.tgt_node_seq = self.tgt_node_seq.cuda()
             self.tgt_par_rule_seq = self.tgt_par_rule_seq.cuda()

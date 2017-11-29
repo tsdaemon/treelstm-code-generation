@@ -55,9 +55,9 @@ def load_dataset(config, force_regenerate=False):
             train = Dataset(train_dir, 'train', grammar, vocab, terminal_vocab, config)
             torch.save(train, train_file)
 
-    train.prepare_torch()
-    dev.prepare_torch()
-    test.prepare_torch()
+    train.prepare_torch(config.cuda)
+    dev.prepare_torch(config.cuda)
+    test.prepare_torch(config.cuda)
     return train, dev, test
 
 
