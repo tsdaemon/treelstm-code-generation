@@ -61,7 +61,7 @@ class Trainer(object):
 
             history_valid_perf.append(val_perf)
             # save performance metrics on every step
-            hist_df = pd.DataFrame(zip(history_valid_bleu, history_valid_acc), columns=['BLEU', 'Accuracy'])
+            hist_df = pd.DataFrame(list(zip(history_valid_bleu, history_valid_acc)), columns=['BLEU', 'Accuracy'])
             history_file = os.path.join(results_dir, 'hist.csv')
             hist_df.to_csv(history_file, index=False)
 
