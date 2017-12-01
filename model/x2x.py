@@ -373,8 +373,8 @@ class Tree2TreeModel(nn.Module):
         decoder_concat = torch.cat([h, ctx_vec], dim=-1)
 
         # (batch_size, rule_embed_dim)
-        decoder_hidden_state_trans_rule = self.decoder_hidden_state_W_rule(h)
-        decoder_hidden_state_trans_token = self.decoder_hidden_state_W_token(decoder_concat)
+        decoder_hidden_state_trans_rule = F.tanh(self.decoder_hidden_state_W_rule(h))
+        decoder_hidden_state_trans_token = F.tanh(self.decoder_hidden_state_W_token(decoder_concat))
 
         # (batch_size, rule_num)
         rule_prob = self.rule_gen_softmax(decoder_hidden_state_trans_rule)

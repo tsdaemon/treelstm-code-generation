@@ -6,6 +6,7 @@ import os
 import numpy as np
 import math
 import shutil
+import pandas as pd
 
 from lang.parse import decode_tree_to_python_ast
 from utils.general import get_batches
@@ -43,14 +44,8 @@ class Trainer(object):
             logging.info('Epoch {} validation finished, bleu: {}, accuracy {}.'.format(
                 epoch + 1, bleu, accuracy))
 
-            # if len(history_valid_acc) == 0 or accuracy > np.array(history_valid_acc).max():
-            #     best_model_by_acc = self.model.pull_params()
             history_valid_acc.append(accuracy)
-
-            # if len(history_valid_bleu) == 0 or bleu > np.array(history_valid_bleu).max():
-            #     best_model_by_bleu = self.model.pull_params()
             history_valid_bleu.append(bleu)
-
             val_perf = eval(self.config.valid_metric)
 
             if val_perf > 0.2:
@@ -65,6 +60,10 @@ class Trainer(object):
                         break
 
             history_valid_perf.append(val_perf)
+
+        hist_df = pd.DataFrame(zip(history_valid_bleu, history_valid_acc), columns=['BLEU', 'Accuracy'])
+        history_file = os.path.join(results_dir, 'hist.csv')
+        hist_df.to_csv(history_file, index=False)
 
     def train(self, dataset, epoch):
         self.model.train()

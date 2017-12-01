@@ -46,10 +46,9 @@ parser.add_argument('-no_copy', dest='enable_copy', action='store_false')
 parser.set_defaults(enable_copy=True)
 
 # training
-parser.add_argument('-optimizer', default='adam')
 parser.add_argument('-clip_grad', default=0., type=float)
 parser.add_argument('-train_patience', default=10, type=int)
-parser.add_argument('-max_epoch', default=50, type=int)
+parser.add_argument('-max_epoch', default=100, type=int)
 parser.add_argument('-batch_size', default=10, type=int)
 parser.add_argument('-lr', default=0.001, type=float)
 parser.add_argument('-cuda', dest='cuda', action='store_true')
