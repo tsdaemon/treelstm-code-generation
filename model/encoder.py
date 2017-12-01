@@ -4,6 +4,8 @@ import torch.nn.functional as F
 import torch.nn.init as init
 from torch.autograd import Variable as Var
 
+from model.utils import add_padding_and_stack
+
 
 class ChildSumTreeLSTM(nn.Module):
     def __init__(self, in_dim, mem_dim, p_dropout=0.0):
@@ -13,13 +15,13 @@ class ChildSumTreeLSTM(nn.Module):
         self.mem_dim = mem_dim
 
         self.ioux = nn.Linear(self.in_dim, 3 * self.mem_dim)
-        init.uniform(self.ioux.weight)
+        init.xavier_uniform(self.ioux.weight)
 
         self.iouh = nn.Linear(self.mem_dim, 3 * self.mem_dim)
         init.orthogonal(self.iouh.weight)
 
         self.fx = nn.Linear(self.in_dim, self.mem_dim)
-        init.uniform(self.fx.weight)
+        init.xavier_uniform(self.fx.weight)
 
         self.fh = nn.Linear(self.mem_dim, self.mem_dim)
         init.orthogonal(self.fh.weight)
@@ -61,3 +63,82 @@ class ChildSumTreeLSTM(nn.Module):
         inputs = self.dropout(inputs)
         self.forward_inner(tree, inputs)
         return tree.state[1].squeeze(), tree.state[0].squeeze(), torch.stack([t.state[1] for t in tree.data()]).squeeze()
+
+
+class EncoderLSTMWrapper(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+
+        self.config = config
+
+        if self.config.encoder == 'recursive-lstm':
+            self.encoder = ChildSumTreeLSTM(config.word_embed_dim, config.encoder_hidden_dim, config.dropout)
+        elif self.config.encoder == 'bi-lstm':
+            hidden_dim = int(config.encoder_hidden_dim/2)
+            # http://pytorch.org/docs/master/nn.html#torch.nn.LSTM
+            self.encoder = nn.LSTM(config.word_embed_dim, hidden_dim, 1, batch_first=True, dropout=config.dropout, bidirectional=True)
+            self.init_bilstm(hidden_dim)
+
+            self.h0 = nn.Parameter(torch.FloatTensor(2, 1, hidden_dim).zero_())
+            self.c0 = nn.Parameter(torch.FloatTensor(2, 1, hidden_dim).zero_())
+        else:
+            raise Exception("Unknown encoder type!")
+
+    def init_bilstm(self, hidden_dim):
+        init.xavier_uniform(self.encoder.weight_ih_l0)
+        init.xavier_uniform(self.encoder.weight_ih_l0_reverse)
+        init.orthogonal(self.encoder.weight_hh_l0)
+        init.orthogonal(self.encoder.weight_hh_l0_reverse)
+
+        bias = self.init_lstm_bias(self.encoder.bias_ih_l0, hidden_dim)
+        self.encoder.bias_ih_l0 = nn.Parameter(bias.clone())
+        self.encoder.bias_hh_l0 = nn.Parameter(bias.clone())
+        self.encoder.bias_ih_l0_reverse = nn.Parameter(bias.clone())
+        self.encoder.bias_hh_l0_reverse = nn.Parameter(bias.clone())
+
+    def init_lstm_bias(self, bias, hidden_dim):
+        bias = bias.data.fill_(0.0)
+        # forget gate
+        bias[hidden_dim:2 * hidden_dim] = 1.0
+        return bias
+
+    def forward(self, trees, inputs):
+        if self.config.encoder == 'recursive-lstm':
+            return self.forward_recursive(trees, inputs)
+        elif self.config.encoder == 'bi-lstm':
+            return self.forward_lstm(inputs)
+
+    def forward_lstm(self, inputs):
+        # (1, batch_size, encoder_hidden_dim)
+        h0 = self.h0.repeat(1, inputs.data.shape[0], 1)
+        c0 = self.c0.repeat(1, inputs.data.shape[0], 1)
+        ctx, hc = self.encoder(inputs, (h0, c0))
+        assert ctx.data.shape[0] == inputs.data.shape[0]
+        assert ctx.data.shape[2] == self.config.encoder_hidden_dim
+        h, c = hc
+        # (batch_size, encoder_hidden_dim)
+        h = h.permute(1, 0, 2).contiguous().view(-1, self.config.encoder_hidden_dim)
+        c = c.permute(1, 0, 2).contiguous().view(-1, self.config.encoder_hidden_dim)
+
+        return h, c, ctx
+
+    def forward_recursive(self, trees, inputs):
+        # (batch_size, encoder_hidden_dim)
+        h = []
+        c = []
+        # (batch_size, max_query_length, encoder_hidden_dim)
+        ctx = []
+        # encoder can process only one tree at the time
+        for tree, input in zip(trees, inputs):
+            h1, c1, ctx1 = self.encoder(tree, input)
+            h.append(h1)
+            c.append(c1)
+            ctx.append(ctx1)
+
+        # all ctx must be one length to be stacked
+        ctx = add_padding_and_stack(ctx, self.is_cuda)
+        h = torch.stack(h)
+        c = torch.stack(h)
+
+        return h, c, ctx
+

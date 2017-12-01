@@ -1,9 +1,13 @@
 import os
-import re
 import platform
-from tqdm import tqdm
 import torch
+import astor
+
 from natural_lang.vocab import Vocab
+from utils.io import serialize_to_file
+from lang.unaryclosure import apply_unary_closures, get_top_unary_closures
+from lang.parse import *
+
 
 base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 lib_dir = os.path.join(base_dir, 'lib')
@@ -148,3 +152,80 @@ def load_word_vectors(path):
     vocab = Vocab(filename=path+'.vocab')
     torch.save(vectors, path+'.pth')
     return vocab, vectors
+
+
+def parse_code_trees(code_file, code_out_file):
+    print('Parsing code trees from file {}'.format(code_file))
+    parse_trees = []
+    codes = []
+    rule_num = 0.
+    example_num = 0
+    for line in tqdm(open(code_file).readlines()):
+        lb = 'В§' if system == 'w' else '§'
+        code = line.replace(lb, '\n').replace('    ', '\t')
+        code = canonicalize_code(code)
+        codes.append(code)
+
+        p_tree = parse_raw(code)
+        # sanity check
+        pred_ast = parse_tree_to_python_ast(p_tree)
+        pred_code = astor.to_source(pred_ast)
+        ref_ast = ast.parse(code)
+        ref_code = astor.to_source(ref_ast)
+
+        if pred_code != ref_code:
+            raise RuntimeError('code mismatch!')
+
+        rules, _ = p_tree.get_productions(include_value_node=False)
+        rule_num += len(rules)
+        example_num += 1
+
+        parse_trees.append(p_tree)
+
+    serialize_to_file(codes, code_out_file)
+    return parse_trees
+
+
+def write_grammar(parse_trees, out_file):
+    grammar = get_grammar(parse_trees)
+
+    serialize_to_file(grammar, out_file + '.bin')
+    with open(out_file, 'w') as f:
+        for rule in tqdm(grammar):
+            str = rule.__repr__()
+            f.write(str + '\n')
+
+    return grammar
+
+
+def write_terminal_tokens_vocab(grammar, parse_trees, out_file, min_freq=2):
+    terminal_token_seq = []
+
+    for parse_tree in tqdm(parse_trees):
+        for node in parse_tree.get_leaves():
+            if grammar.is_value_node(node):
+                terminal_val = node.value
+                terminal_str = str(terminal_val)
+
+                terminal_tokens = get_terminal_tokens(terminal_str)
+
+                for terminal_token in terminal_tokens:
+                    terminal_token_seq.append(terminal_token)
+
+    terminal_vocab = build_vocab_from_items(terminal_token_seq, False, min_freq)
+    save_vocab(out_file, terminal_vocab)
+
+
+def do_unary_closures(parse_trees, k):
+    print('Applying unary closures to parse trees...')
+    unary_closures = get_top_unary_closures(parse_trees, k=20)
+    for parse_tree in tqdm(parse_trees):
+        apply_unary_closures(parse_tree, unary_closures)
+
+
+def write_trees(parse_trees, out_file):
+    # save data
+    with open(out_file, 'w') as f:
+        for tree in tqdm(parse_trees):
+            f.write(tree.__repr__() + '\n')
+    serialize_to_file(parse_trees, out_file + '.bin')

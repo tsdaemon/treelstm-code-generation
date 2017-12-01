@@ -21,6 +21,7 @@ parser.add_argument('-ptrnet_hidden_dim', default=50, type=int)
 parser.add_argument('-dropout', default=0.2, type=float)
 
 # encoder
+parser.add_argument('-encoder', default='recursive-lstm', choices=['recursive-lstm', 'bi-lstm'])
 parser.add_argument('-syntax', default='ccg', choices=['ccg', 'pcfg', 'dependency'])
 
 # decoder

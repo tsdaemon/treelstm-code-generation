@@ -3,7 +3,7 @@ from torch.nn import Parameter
 import numpy as np
 
 import Constants
-from model.encoder import ChildSumTreeLSTM
+from model.encoder import EncoderLSTMWrapper
 from model.decoder import *
 from model.layers import *
 from model.utils import *
@@ -25,7 +25,7 @@ class Tree2TreeModel(nn.Module):
         self.word_embedding = nn.Embedding(word_embeds.shape[0], config.word_embed_dim, padding_idx=Constants.PAD)
         self.word_embedding.weight.data.copy_(word_embeds)
 
-        self.encoder = ChildSumTreeLSTM(config.word_embed_dim, config.encoder_hidden_dim, config.dropout)
+        self.encoder = EncoderLSTMWrapper(config)
 
         self.decoder = CondAttLSTM(config.rule_embed_dim + config.node_embed_dim + config.rule_embed_dim,
                                    config.decoder_hidden_dim,
@@ -332,25 +332,7 @@ class Tree2TreeModel(nn.Module):
         queries = Var(queries, requires_grad=False)
         # (batch_size, max_query_length, word_embed_dim)
         query_embeds = self.word_embedding(queries)
-
-        # (batch_size, encoder_hidden_dim)
-        h = []
-        c = []
-        # (batch_size, max_query_length, encoder_hidden_dim)
-        ctx = []
-        # encoder can process only one tree at the time
-        for tree, query_embed in zip(trees, query_embeds):
-            h1, c1, ctx1 = self.encoder(tree, query_embed)
-            h.append(h1)
-            c.append(c1)
-            ctx.append(ctx1)
-
-        # all ctx must be one length to be stacked
-        ctx = add_padding_and_stack(ctx, self.is_cuda)
-        h = torch.stack(h)
-        c = torch.stack(h)
-
-        return h, c, ctx
+        return self.encoder(trees, query_embeds)
 
     def forward_decoder_step(self, t,
                              h, c, hist_h,
