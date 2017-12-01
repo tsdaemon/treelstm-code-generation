@@ -33,12 +33,11 @@ if __name__ == '__main__':
 
     # prepare dirs
     data_dir = os.path.join(args.data_dir, args.dataset)
-    output_dir = os.path.join(args.output_dir, args.dataset)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
 
     # start logging
-    init_logging(os.path.join(output_dir, 'parser.log'), logging.INFO)
+    init_logging(os.path.join(args.output_dir, 'parser.log'), logging.INFO)
     logging.info('command line: %s', ' '.join(sys.argv))
     logging.info('current config: %s', args)
     logging.info('loading dataset [%s]', args.dataset)
@@ -74,9 +73,9 @@ if __name__ == '__main__':
     trainer = Trainer(model, args, optimizer)
 
     if args.mode == 'train':
-        trainer.train_all(train_data, dev_data, test_data, output_dir)
+        trainer.train_all(train_data, dev_data, test_data, args.output_dir)
     elif args.mode == 'validate':
-        trainer.validate(dev_data, 1, os.path.join(output_dir, 'tmp'))
+        trainer.validate(dev_data, 1, os.path.join(args.output_dir, 'tmp'))
     else:
         raise Exception("Unknown mode!")
 

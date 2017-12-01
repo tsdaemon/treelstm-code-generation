@@ -436,8 +436,6 @@ class Tree2TreeModel(nn.Module):
 
         # (batch_size, max_example_action_num, rule_embed_dim)
         decoder_hidden_state_trans_rule = self.decoder_hidden_state_W_rule(decoder_hidden_states)
-
-        # (batch_size, max_example_action_num, rule_embed_dim)
         decoder_hidden_state_trans_token = self.decoder_hidden_state_W_token(decoder_concat)
 
         if self.config.last_tanh:

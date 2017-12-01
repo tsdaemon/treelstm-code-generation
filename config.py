@@ -28,6 +28,7 @@ parser.add_argument('-syntax', default='ccg', choices=['ccg', 'pcfg', 'dependenc
 parser.add_argument('-last_tanh', dest='last_tanh', action='store_true')
 parser.add_argument('-no_last_tanh', dest='last_tanh', action='store_false')
 parser.set_defaults(last_tanh=True)
+
 parser.add_argument('-parent_hidden_state_feed', dest='parent_hidden_state_feed', action='store_true')
 parser.add_argument('-no_parent_hidden_state_feed', dest='parent_hidden_state_feed', action='store_false')
 parser.set_defaults(parent_hidden_state_feed=True)
