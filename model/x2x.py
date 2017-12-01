@@ -373,8 +373,11 @@ class Tree2TreeModel(nn.Module):
         decoder_concat = torch.cat([h, ctx_vec], dim=-1)
 
         # (batch_size, rule_embed_dim)
-        decoder_hidden_state_trans_rule = F.tanh(self.decoder_hidden_state_W_rule(h))
-        decoder_hidden_state_trans_token = F.tanh(self.decoder_hidden_state_W_token(decoder_concat))
+        decoder_hidden_state_trans_rule = self.decoder_hidden_state_W_rule(h)
+        decoder_hidden_state_trans_token = self.decoder_hidden_state_W_token(decoder_concat)
+        if self.config.last_tanh:
+            decoder_hidden_state_trans_rule = F.tanh(decoder_hidden_state_trans_rule)
+            decoder_hidden_state_trans_token = F.tanh(decoder_hidden_state_trans_token)
 
         # (batch_size, rule_num)
         rule_prob = self.rule_gen_softmax(decoder_hidden_state_trans_rule)
@@ -432,10 +435,14 @@ class Tree2TreeModel(nn.Module):
         decoder_concat = torch.cat([decoder_hidden_states, ctx_vectors], dim=-1)
 
         # (batch_size, max_example_action_num, rule_embed_dim)
-        decoder_hidden_state_trans_rule = F.tanh(self.decoder_hidden_state_W_rule(decoder_hidden_states))
+        decoder_hidden_state_trans_rule = self.decoder_hidden_state_W_rule(decoder_hidden_states)
 
         # (batch_size, max_example_action_num, rule_embed_dim)
-        decoder_hidden_state_trans_token = F.tanh(self.decoder_hidden_state_W_token(decoder_concat))
+        decoder_hidden_state_trans_token = self.decoder_hidden_state_W_token(decoder_concat)
+
+        if self.config.last_tanh:
+            decoder_hidden_state_trans_rule = F.tanh(decoder_hidden_state_trans_rule)
+            decoder_hidden_state_trans_token = F.tanh(decoder_hidden_state_trans_token)
 
         # (batch_size, max_example_action_num, rule_num)
         rule_predict = self.rule_gen_softmax.forward_train(decoder_hidden_state_trans_rule)
