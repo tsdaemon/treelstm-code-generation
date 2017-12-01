@@ -24,6 +24,7 @@ class CondAttLSTM(nn.Module):
         # input gate
         self.W_ix = nn.Linear(input_dim, output_dim)
         init.xavier_uniform(self.W_ix.weight)
+        self.W_ix.bias = nn.Parameter(torch.FloatTensor(output_dim).zero_())
 
         self.W_i = nn.Linear(output_dim + context_dim + output_dim + output_dim, output_dim, bias=False)
         init.orthogonal(self.W_i.weight)
@@ -31,6 +32,7 @@ class CondAttLSTM(nn.Module):
         # forget gate
         self.W_fx = nn.Linear(input_dim, output_dim)
         init.xavier_uniform(self.W_fx.weight)
+        self.W_fx.bias = nn.Parameter(torch.FloatTensor(output_dim).fill_(1.0))
 
         self.W_f = nn.Linear(output_dim + context_dim + output_dim + output_dim, output_dim, bias=False)
         init.orthogonal(self.W_f.weight)
@@ -38,6 +40,7 @@ class CondAttLSTM(nn.Module):
         # memory cell new value
         self.W_cx = nn.Linear(input_dim, output_dim)
         init.xavier_uniform(self.W_cx.weight)
+        self.W_cx.bias = nn.Parameter(torch.FloatTensor(output_dim).zero_())
 
         self.W_c = nn.Linear(output_dim + context_dim + output_dim + output_dim, output_dim, bias=False)
         init.orthogonal(self.W_c.weight)
@@ -45,6 +48,7 @@ class CondAttLSTM(nn.Module):
         # output gate
         self.W_ox = nn.Linear(input_dim, output_dim)
         init.xavier_uniform(self.W_ox.weight)
+        self.W_ox.bias = nn.Parameter(torch.FloatTensor(output_dim).zero_())
 
         self.W_o = nn.Linear(output_dim + context_dim + output_dim + output_dim, output_dim, bias=False)
         init.orthogonal(self.W_o.weight)
@@ -52,18 +56,22 @@ class CondAttLSTM(nn.Module):
         # attention layer
         self.att_ctx = nn.Linear(context_dim, att_hidden_dim)
         init.xavier_uniform(self.att_ctx.weight)
+        self.att_ctx.bias = nn.Parameter(torch.FloatTensor(att_hidden_dim).zero_())
         self.att_h = nn.Linear(output_dim, att_hidden_dim, bias=False)
         init.xavier_uniform(self.att_h.weight)
         self.att = nn.Linear(att_hidden_dim, 1)
         init.xavier_uniform(self.att.weight)
+        self.att.bias = nn.Parameter(torch.FloatTensor(1).zero_())
 
         # attention over history
         self.h_att_hist = nn.Linear(output_dim, att_hidden_dim)
         init.xavier_uniform(self.h_att_hist.weight)
+        self.h_att_hist.bias = nn.Parameter(torch.FloatTensor(att_hidden_dim).zero_())
         self.h_att_h = nn.Linear(output_dim, att_hidden_dim, bias=False)
         init.xavier_uniform(self.h_att_h.weight)
         self.h_att = nn.Linear(att_hidden_dim, 1)
         init.xavier_uniform(self.h_att.weight)
+        self.h_att.bias = nn.Parameter(torch.FloatTensor(1).zero_())
 
         self.dropout = nn.AlphaDropout(p=config.dropout)
         self.softmax = nn.Softmax(dim=-1);
@@ -201,12 +209,15 @@ class PointerNet(nn.Module):
 
         self.dense1_input = nn.Linear(config.encoder_hidden_dim, config.ptrnet_hidden_dim)
         init.xavier_uniform(self.dense1_input.weight)
+        self.dense1_input.bias = parameter_init_zero(config.ptrnet_hidden_dim)
 
         self.dense1_h = nn.Linear(config.decoder_hidden_dim + config.encoder_hidden_dim, config.ptrnet_hidden_dim)
         init.xavier_uniform(self.dense1_h.weight)
+        self.dense1_h.bias = parameter_init_zero(config.ptrnet_hidden_dim)
 
         self.dense2 = nn.Linear(config.ptrnet_hidden_dim, 1)
         init.xavier_uniform(self.dense2.weight)
+        self.dense2.bias = parameter_init_zero(1)
 
         self.log_softmax = nn.LogSoftmax(dim=-1)
         self.softmax = nn.Softmax(dim=-1);

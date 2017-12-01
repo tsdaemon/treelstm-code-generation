@@ -37,18 +37,15 @@ class Tree2TreeModel(nn.Module):
 
         self.terminal_gen_softmax = LogSoftmaxDense(config.decoder_hidden_dim, 2)
         init.xavier_uniform(self.terminal_gen_softmax.weight)
+        self.terminal_gen_softmax.bias = parameter_init_zero(2)
 
         self.rule_gen_softmax = LogSoftmaxDense(config.rule_embed_dim, config.rule_num)
         init.normal(self.rule_gen_softmax.weight, 0, 0.1)
-        # self.rule_embedding_W = Parameter(torch.FloatTensor(config.rule_num, config.rule_embed_dim))
-        # init.normal(self.rule_embedding_W, 0, 0.1)
-        # self.rule_embedding_b = Parameter(torch.FloatTensor(config.rule_num).zero_())
+        self.rule_gen_softmax.bias = parameter_init_zero(config.rule_num)
 
         self.vocab_gen_softmax = LogSoftmaxDense(config.rule_embed_dim, config.target_vocab_size)
         init.normal(self.vocab_gen_softmax.weight, 0, 0.1)
-        # self.vocab_embedding_W = Parameter(torch.FloatTensor(config.target_vocab_size, config.rule_embed_dim))
-        # init.normal(self.vocab_embedding_W, 0, 0.1)
-        # self.vocab_embedding_b = Parameter(torch.FloatTensor(config.target_vocab_size).zero_())
+        self.vocab_gen_softmax.bias = parameter_init_zero(config.target_vocab_size)
 
         self.node_embedding = Parameter(torch.FloatTensor(config.node_num, config.node_embed_dim))
         init.normal(self.node_embedding, 0, 0.1)
@@ -56,10 +53,12 @@ class Tree2TreeModel(nn.Module):
         # decoder_hidden_dim -> action embed
         self.decoder_hidden_state_W_rule = nn.Linear(config.decoder_hidden_dim, config.rule_embed_dim)
         init.xavier_uniform(self.decoder_hidden_state_W_rule.weight)
+        self.decoder_hidden_state_W_rule.bias = parameter_init_zero(config.rule_embed_dim)
         # decoder_hidden_dim -> action embed
         self.decoder_hidden_state_W_token = nn.Linear(config.decoder_hidden_dim + config.encoder_hidden_dim,
                                                       config.rule_embed_dim)
         init.xavier_uniform(self.decoder_hidden_state_W_token.weight)
+        self.decoder_hidden_state_W_token.bias = parameter_init_zero(config.rule_embed_dim)
 
         self.log_softmax = nn.LogSoftmax(dim=-1)
         self.softmax = nn.Softmax(dim=-1)
@@ -433,10 +432,10 @@ class Tree2TreeModel(nn.Module):
         decoder_concat = torch.cat([decoder_hidden_states, ctx_vectors], dim=-1)
 
         # (batch_size, max_example_action_num, rule_embed_dim)
-        decoder_hidden_state_trans_rule = self.decoder_hidden_state_W_rule(decoder_hidden_states)
+        decoder_hidden_state_trans_rule = F.tanh(self.decoder_hidden_state_W_rule(decoder_hidden_states))
 
         # (batch_size, max_example_action_num, rule_embed_dim)
-        decoder_hidden_state_trans_token = self.decoder_hidden_state_W_token(decoder_concat)
+        decoder_hidden_state_trans_token = F.tanh(self.decoder_hidden_state_W_token(decoder_concat))
 
         # (batch_size, max_example_action_num, rule_num)
         rule_predict = self.rule_gen_softmax.forward_train(decoder_hidden_state_trans_rule)

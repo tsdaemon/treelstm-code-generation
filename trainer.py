@@ -56,10 +56,10 @@ class Trainer(object):
             if val_perf > 0.2:
                 if val_perf > np.array(history_valid_perf).max():
                     patience_counter = 0
-                    logging.info('Found best model on epoch {}'.format(epoch))
+                    logging.info('Found best model on epoch {}'.format(epoch+1))
                 else:
                     patience_counter += 1
-                    logging.info('Hitting patience_counter: %d', patience_counter)
+                    logging.info('Hitting patience_counter: {}'.format(patience_counter))
                     if patience_counter >= self.config.train_patience:
                         logging.info('Early Stop!')
                         break

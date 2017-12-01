@@ -16,15 +16,18 @@ class ChildSumTreeLSTM(nn.Module):
 
         self.ioux = nn.Linear(self.in_dim, 3 * self.mem_dim)
         init.xavier_uniform(self.ioux.weight)
+        self.ioux.bias = nn.Parameter(torch.FloatTensor(3*self.mem_dim).zero_())
 
-        self.iouh = nn.Linear(self.mem_dim, 3 * self.mem_dim)
+        self.iouh = nn.Linear(self.mem_dim, 3 * self.mem_dim, bias=False)
         init.orthogonal(self.iouh.weight)
 
         self.fx = nn.Linear(self.in_dim, self.mem_dim)
         init.xavier_uniform(self.fx.weight)
 
-        self.fh = nn.Linear(self.mem_dim, self.mem_dim)
+        self.fh = nn.Linear(self.mem_dim, self.mem_dim, bias=False)
         init.orthogonal(self.fh.weight)
+
+        self.fb = nn.Parameter(torch.FloatTensor(self.mem_dim).fill_(1.0))
 
         self.dropout = nn.AlphaDropout(p=p_dropout)
 
@@ -38,7 +41,8 @@ class ChildSumTreeLSTM(nn.Module):
 
         f = F.sigmoid(
             self.fh(child_h) +
-            self.fx(inputs).repeat(len(child_h), 1)
+            self.fx(inputs).repeat(len(child_h), 1) +
+            self.fb
         )
         fc = torch.mul(f, child_c)
 
@@ -70,6 +74,7 @@ class EncoderLSTMWrapper(nn.Module):
         super().__init__()
 
         self.config = config
+        self.is_cuda = self.config.cuda
 
         if self.config.encoder == 'recursive-lstm':
             self.encoder = ChildSumTreeLSTM(config.word_embed_dim, config.encoder_hidden_dim, config.dropout)

@@ -1,6 +1,6 @@
 import torch
 from torch.autograd import Variable as Var
-import torch.nn.functional as F
+import torch.nn as nn
 
 
 def ifcond(cond, x_1, x_2):
@@ -65,6 +65,9 @@ def add_padding_and_stack(tensors, cuda, dim=0, max_length=None):
         result.append(tensor)
 
     return torch.stack(result)
+
+def parameter_init_zero(*dims):
+    return nn.Parameter(torch.FloatTensor(*dims).zero_())
 
 
 
