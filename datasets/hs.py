@@ -10,8 +10,7 @@ from config import parser
 
 
 def load_dataset(config, force_regenerate=False):
-    data_dir = config.data_dir
-    hs_dir = os.path.join(data_dir, 'hs')
+    hs_dir = config.data_dir
     logging.info('='*80)
     logging.info('Loading dataset from folder ' + hs_dir)
     logging.info('='*80)

@@ -32,7 +32,6 @@ if __name__ == '__main__':
         torch.backends.cudnn.benchmark = True
 
     # prepare dirs
-    data_dir = os.path.join(args.data_dir, args.dataset)
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
@@ -62,7 +61,7 @@ if __name__ == '__main__':
         model = torch.load(args.model)
     else:
         logging.info('Creating new model'.format(args.model))
-        emb_file = os.path.join(data_dir, 'word_embeddings.pth')
+        emb_file = os.path.join(args.data_dir, 'word_embeddings.pth')
         emb = torch.load(emb_file)
         model = Tree2TreeModel(args, emb, train_data.terminal_vocab, train_data.grammar)
         if args.cuda:

@@ -78,12 +78,12 @@ if __name__ == '__main__':
     logging.info('Pre-processing HearthStone dataset')
     logging.info('=' * 80)
 
-    hs_source_dir = os.path.join(data_dir, 'card2code/third_party/hearthstone/')
-    hs_dir = os.path.join(base_dir, 'preprocessed/hs')
+    # hs_source_dir = os.path.join(data_dir, 'card2code/third_party/hearthstone/')
+    hs_dir = os.path.join(base_dir, 'preprocessed/hs/no_unary_closures')
 
-    if os.path.exists(hs_dir):
-        shutil.rmtree(hs_dir)
-    os.makedirs(hs_dir)
+    # if os.path.exists(hs_dir):
+    #     shutil.rmtree(hs_dir)
+    # os.makedirs(hs_dir)
 
     # if not os.path.exists(hs_dir):
     #     os.makedirs(hs_dir)
@@ -96,47 +96,47 @@ if __name__ == '__main__':
     test_dir = os.path.join(hs_dir, 'test')
     make_dirs([train_dir, dev_dir, test_dir])
 
-    shutil.copy(os.path.join(hs_source_dir, 'dev_hs.in'), os.path.join(dev_dir, 'dev.in'))
-    shutil.copy(os.path.join(hs_source_dir, 'dev_hs.out'), os.path.join(dev_dir, 'dev.out'))
-    shutil.copy(os.path.join(hs_source_dir, 'train_hs.in'), os.path.join(train_dir, 'train.in'))
-    shutil.copy(os.path.join(hs_source_dir, 'train_hs.out'), os.path.join(train_dir, 'train.out'))
-    shutil.copy(os.path.join(hs_source_dir, 'test_hs.in'), os.path.join(test_dir, 'test.in'))
-    shutil.copy(os.path.join(hs_source_dir, 'test_hs.out'), os.path.join(test_dir, 'test.out'))
-
-    logging.info('Splitting dataset')
-    split_input(os.path.join(dev_dir, 'dev.in'))
-    split_input(os.path.join(train_dir, 'train.in'))
-    split_input(os.path.join(test_dir, 'test.in'))
-
-    logging.info('Tokenizing')
-    tokenize(os.path.join(dev_dir, 'dev.in.description'))
-    tokenize(os.path.join(train_dir, 'train.in.description'))
-    tokenize(os.path.join(test_dir, 'test.in.description'))
-
-    logging.info('Building vocabulary')
-    vocab = build_vocab_from_token_files(glob.glob(os.path.join(hs_dir, '*/*.tokens')), min_frequency=3)
-    save_vocab(os.path.join(hs_dir, 'vocab.txt'), vocab)
-
-    logging.info('Build vocab embeddings')
-    vocab = Vocab(filename=os.path.join(hs_dir, 'vocab.txt'),
-                  data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
-    emb_file = os.path.join(hs_dir, 'word_embeddings.pth')
-    glove_file = os.path.join(data_dir, 'glove/glove.840B.300d')
-    # load glove embeddings and vocab
-    glove_vocab, glove_emb = load_word_vectors(glove_file)
-    emb = torch.Tensor(vocab.size(), glove_emb.size(1)).normal_(0.0, 0.1)
-    # zero out the embeddings for padding and other special words if they are absent in vocab
-    for idx, item in enumerate([Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD]):
-        emb[idx].zero_()
-    for word in vocab.labelToIdx.keys():
-        if glove_vocab.getIndex(word):
-            emb[vocab.getIndex(word)] = glove_emb[glove_vocab.getIndex(word)]
-    torch.save(emb, emb_file)
-
-    logging.info('Parsing descriptions trees')
-    parse(os.path.join(dev_dir, 'dev.in.tokens'))
-    parse(os.path.join(train_dir, 'train.in.tokens'))
-    parse(os.path.join(test_dir, 'test.in.tokens'))
+    # shutil.copy(os.path.join(hs_source_dir, 'dev_hs.in'), os.path.join(dev_dir, 'dev.in'))
+    # shutil.copy(os.path.join(hs_source_dir, 'dev_hs.out'), os.path.join(dev_dir, 'dev.out'))
+    # shutil.copy(os.path.join(hs_source_dir, 'train_hs.in'), os.path.join(train_dir, 'train.in'))
+    # shutil.copy(os.path.join(hs_source_dir, 'train_hs.out'), os.path.join(train_dir, 'train.out'))
+    # shutil.copy(os.path.join(hs_source_dir, 'test_hs.in'), os.path.join(test_dir, 'test.in'))
+    # shutil.copy(os.path.join(hs_source_dir, 'test_hs.out'), os.path.join(test_dir, 'test.out'))
+    #
+    # logging.info('Splitting dataset')
+    # split_input(os.path.join(dev_dir, 'dev.in'))
+    # split_input(os.path.join(train_dir, 'train.in'))
+    # split_input(os.path.join(test_dir, 'test.in'))
+    #
+    # logging.info('Tokenizing')
+    # tokenize(os.path.join(dev_dir, 'dev.in.description'))
+    # tokenize(os.path.join(train_dir, 'train.in.description'))
+    # tokenize(os.path.join(test_dir, 'test.in.description'))
+    #
+    # logging.info('Building vocabulary')
+    # vocab = build_vocab_from_token_files(glob.glob(os.path.join(hs_dir, '*/*.tokens')), min_frequency=3)
+    # save_vocab(os.path.join(hs_dir, 'vocab.txt'), vocab)
+    #
+    # logging.info('Build vocab embeddings')
+    # vocab = Vocab(filename=os.path.join(hs_dir, 'vocab.txt'),
+    #               data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
+    # emb_file = os.path.join(hs_dir, 'word_embeddings.pth')
+    # glove_file = os.path.join(data_dir, 'glove/glove.840B.300d')
+    # # load glove embeddings and vocab
+    # glove_vocab, glove_emb = load_word_vectors(glove_file)
+    # emb = torch.Tensor(vocab.size(), glove_emb.size(1)).normal_(0.0, 0.1)
+    # # zero out the embeddings for padding and other special words if they are absent in vocab
+    # for idx, item in enumerate([Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD]):
+    #     emb[idx].zero_()
+    # for word in vocab.labelToIdx.keys():
+    #     if glove_vocab.getIndex(word):
+    #         emb[vocab.getIndex(word)] = glove_emb[glove_vocab.getIndex(word)]
+    # torch.save(emb, emb_file)
+    #
+    # logging.info('Parsing descriptions trees')
+    # parse(os.path.join(dev_dir, 'dev.in.tokens'))
+    # parse(os.path.join(train_dir, 'train.in.tokens'))
+    # parse(os.path.join(test_dir, 'test.in.tokens'))
 
     logging.info('Parsing output code')
     parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'), os.path.join(dev_dir, 'dev.out.bin'))
@@ -144,8 +144,8 @@ if __name__ == '__main__':
     parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'), os.path.join(test_dir, 'test.out.bin'))
     parse_trees = parse_trees_dev+parse_trees_train+parse_trees_test
 
-    logging.info('Applying unary closures')
-    do_unary_closures(parse_trees, 30)
+    # logging.info('Applying unary closures')
+    # do_unary_closures(parse_trees, 30)
 
     logging.info('Saving trees')
     write_trees(parse_trees_dev, os.path.join(dev_dir, 'dev.out.trees'))
