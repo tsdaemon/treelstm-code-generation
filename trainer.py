@@ -30,7 +30,7 @@ class Trainer(object):
         history_valid_acc = []
         history_errors = []
         best_model_file = None
-        best_bleu, best_accuracy = 0.0
+        best_bleu, best_accuracy = 0.0, 0.0
         for epoch in range(max_epoch):
             mean_loss = self.train(train_data, epoch)
             logging.info('Epoch {} training finished, mean loss: {}.'.format(epoch+1, mean_loss))
