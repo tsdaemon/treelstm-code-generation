@@ -16,23 +16,24 @@ def load_dataset(config, force_regenerate=False):
     logging.info('Loading dataset from folder ' + hs_dir)
     logging.info('='*80)
     train, test, dev = None, None, None
+    prefix = config.syntax + '_'
 
     train_dir = os.path.join(hs_dir, 'train')
-    train_file = os.path.join(train_dir, 'train.pth')
+    train_file = os.path.join(train_dir, prefix+'train.pth')
     if not force_regenerate and os.path.isfile(train_file):
         logging.info('Train dataset found, loading...')
         train = torch.load(train_file)
         train.config = config
 
     test_dir = os.path.join(hs_dir, 'test')
-    test_file = os.path.join(test_dir, 'test.pth')
+    test_file = os.path.join(test_dir, prefix+'test.pth')
     if not force_regenerate and os.path.isfile(test_file):
         logging.info('Test dataset found, loading...')
         test = torch.load(test_file)
         test.config = config
 
     dev_dir = os.path.join(hs_dir, 'dev')
-    dev_file = os.path.join(dev_dir, 'dev.pth')
+    dev_file = os.path.join(dev_dir, prefix+'dev.pth')
     if not force_regenerate and os.path.isfile(dev_file):
         logging.info('Dev dataset found, loading...')
         dev = torch.load(dev_file)
@@ -66,4 +67,9 @@ def load_dataset(config, force_regenerate=False):
 
 if __name__ == '__main__':
     config = parser.parse_args()
+    config.syntax = 'ccg'
+    load_dataset(config, force_regenerate=True)
+    config.syntax = 'pcfg'
+    load_dataset(config, force_regenerate=True)
+    config.syntax = 'dependency'
     load_dataset(config, force_regenerate=True)

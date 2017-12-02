@@ -32,7 +32,7 @@ class Trainer(object):
             mean_loss = self.train(train_data, epoch)
             logging.info('Epoch {} training finished, mean loss: {}.'.format(epoch+1, mean_loss))
 
-            epoch_dir = os.path.join(results_dir, str(epoch))
+            epoch_dir = os.path.join(results_dir, str(epoch+1))
             if os.path.exists(epoch_dir):
                 shutil.rmtree(epoch_dir)
             os.mkdir(epoch_dir)
