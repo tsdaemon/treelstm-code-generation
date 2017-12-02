@@ -45,17 +45,17 @@ def load_dataset(config, force_regenerate=False):
         vocab = Vocab(os.path.join(hs_dir, 'vocab.txt'), data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
 
         if test is None:
-            print('Test dataset not found, generating...')
+            logging.info('Test dataset not found, generating...')
             test = Dataset(test_dir, 'test', grammar, vocab, terminal_vocab, config)
             torch.save(test, test_file)
 
         if dev is None:
-            print('Dev dataset not found, generating...')
+            logging.info('Dev dataset not found, generating...')
             dev = Dataset(dev_dir, 'dev', grammar, vocab, terminal_vocab, config)
             torch.save(dev, dev_file)
 
         if train is None:
-            print('Train dataset not found, generating...')
+            logging.info('Train dataset not found, generating...')
             train = Dataset(train_dir, 'train', grammar, vocab, terminal_vocab, config)
             torch.save(train, train_file)
 

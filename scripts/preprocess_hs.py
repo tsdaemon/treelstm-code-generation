@@ -1,9 +1,9 @@
 import shutil
 import glob
 from functools import reduce
+import logging
 
 from scripts.preprocess_utils import *
-from natural_lang.vocab import get_glove_vocab
 from lang.parse import *
 
 import Constants
@@ -43,7 +43,7 @@ def tranform_description(vars, desc):
 
 
 def split_input(filepath):
-    print('Splitting input ' + filepath)
+    logging.info('Splitting input ' + filepath)
     dst_dir = os.path.dirname(filepath)
     with open(filepath, 'r') as datafile, \
          open(os.path.join(dst_dir, filepath + '.description'), 'w') as dfile:
@@ -60,17 +60,30 @@ def split_input(filepath):
                 dfile.write(description)
 
 
+def move_numbers_from_known(vocab, vocab_unk):
+    r = re.compile(r"(\+|\-)?\d+(\.\d+)?(\/\d+)?")
+    to_move = []
+    for v in vocab:
+        if r.match(v) is not None:
+            to_move.append(v)
+    vocab -= set(to_move)
+    vocab_unk |= set(to_move)
+    return vocab, vocab_unk
+
+
 if __name__ == '__main__':
-    print('=' * 80)
-    print('Pre-processing HearthStone dataset')
-    print('=' * 80)
+    logging.getLogger().setLevel(logging.DEBUG)
+
+    logging.info('=' * 80)
+    logging.info('Pre-processing HearthStone dataset')
+    logging.info('=' * 80)
 
     hs_source_dir = os.path.join(data_dir, 'card2code/third_party/hearthstone/')
     hs_dir = os.path.join(base_dir, 'preprocessed/hs')
 
-    # if os.path.exists(hs_dir):
-    #     shutil.rmtree(hs_dir)
-    # os.makedirs(hs_dir)
+    if os.path.exists(hs_dir):
+        shutil.rmtree(hs_dir)
+    os.makedirs(hs_dir)
 
     # if not os.path.exists(hs_dir):
     #     os.makedirs(hs_dir)
@@ -90,26 +103,21 @@ if __name__ == '__main__':
     shutil.copy(os.path.join(hs_source_dir, 'test_hs.in'), os.path.join(test_dir, 'test.in'))
     shutil.copy(os.path.join(hs_source_dir, 'test_hs.out'), os.path.join(test_dir, 'test.out'))
 
-    print('Splitting dataset')
+    logging.info('Splitting dataset')
     split_input(os.path.join(dev_dir, 'dev.in'))
     split_input(os.path.join(train_dir, 'train.in'))
     split_input(os.path.join(test_dir, 'test.in'))
 
-    print('Tokenizing')
+    logging.info('Tokenizing')
     tokenize(os.path.join(dev_dir, 'dev.in.description'))
     tokenize(os.path.join(train_dir, 'train.in.description'))
     tokenize(os.path.join(test_dir, 'test.in.description'))
 
-    print('Building vocabulary')
-    vocab = build_vocab_from_token_files(glob.glob(os.path.join(hs_dir, '*/*.tokens')))
-    vocab_glove = get_glove_vocab().getSet()
-    vocab_unk = vocab - vocab_glove
-    vocab = vocab - vocab_unk
-    vocab, vocab_unk = move_numbers_from_known(vocab, vocab_unk)
+    logging.info('Building vocabulary')
+    vocab = build_vocab_from_token_files(glob.glob(os.path.join(hs_dir, '*/*.tokens')), min_frequency=3)
     save_vocab(os.path.join(hs_dir, 'vocab.txt'), vocab)
-    save_vocab(os.path.join(hs_dir, 'vocab.unk.txt'), vocab_unk)
 
-    print('Build vocab embeddings')
+    logging.info('Build vocab embeddings')
     vocab = Vocab(filename=os.path.join(hs_dir, 'vocab.txt'), data=[Constants.UNK_WORD, Constants.EOS_WORD])
     emb_file = os.path.join(hs_dir, 'word_embeddings.pth')
     glove_file = os.path.join(data_dir, 'glove/glove.840B.300d')
@@ -124,28 +132,28 @@ if __name__ == '__main__':
             emb[vocab.getIndex(word)] = glove_emb[glove_vocab.getIndex(word)]
     torch.save(emb, emb_file)
 
-    print('Parsing descriptions trees')
+    logging.info('Parsing descriptions trees')
     parse(os.path.join(dev_dir, 'dev.in.tokens'))
     parse(os.path.join(train_dir, 'train.in.tokens'))
     parse(os.path.join(test_dir, 'test.in.tokens'))
 
-    print('Parsing output code')
+    logging.info('Parsing output code')
     parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'), os.path.join(dev_dir, 'dev.out.bin'))
     parse_trees_train = parse_code_trees(os.path.join(train_dir, 'train.out'), os.path.join(train_dir, 'train.out.bin'))
     parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'), os.path.join(test_dir, 'test.out.bin'))
     parse_trees = parse_trees_dev+parse_trees_train+parse_trees_test
 
-    print('Applying unary closures')
+    logging.info('Applying unary closures')
     do_unary_closures(parse_trees, 30)
 
-    print('Saving trees')
+    logging.info('Saving trees')
     write_trees(parse_trees_dev, os.path.join(dev_dir, 'dev.out.trees'))
     write_trees(parse_trees_train, os.path.join(train_dir, 'train.out.trees'))
     write_trees(parse_trees_test, os.path.join(test_dir, 'test.out.trees'))
 
-    print('Creating grammar')
+    logging.info('Creating grammar')
     grammar = write_grammar(parse_trees, os.path.join(hs_dir, 'grammar.txt'))
 
-    print('Creating terminal vocabulary')
+    logging.info('Creating terminal vocabulary')
     write_terminal_tokens_vocab(grammar, parse_trees, os.path.join(hs_dir, 'terminal_vocab.txt'), min_freq=3)
 

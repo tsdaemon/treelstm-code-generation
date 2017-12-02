@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 from collections import Counter
 import re
+import logging
 
 from lang.astnode import ASTNode
 from lang.grammar import type_str_to_type
@@ -92,10 +93,10 @@ def get_top_unary_closures(parse_trees, k=20, freq=50):
 
     ranked_links = sorted(unary_links_counter, key=unary_links_counter.get, reverse=True)
     if k:
-        print('rank cut off: %d' % k)
+        logging.debug('rank cut off: %d' % k)
         unary_links = ranked_links[:k]
     else:
-        print('freq cut off: %d' % freq)
+        logging.debug('freq cut off: %d' % freq)
         unary_links = sorted([l for l in unary_links_counter if unary_links_counter[l] >= freq], key=unary_links_counter.get, reverse=True)
 
     unary_closures = []
@@ -105,7 +106,7 @@ def get_top_unary_closures(parse_trees, k=20, freq=50):
     unary_closures = zip(unary_links, unary_closures)
 
     for link, closure in unary_closures:
-        print('link: %s ||| closure: %s ||| freq: %d' % (link, closure, unary_links_counter[link]))
+        logging.debug('link: %s ||| closure: %s ||| freq: %d' % (link, closure, unary_links_counter[link]))
 
     return unary_closures
 

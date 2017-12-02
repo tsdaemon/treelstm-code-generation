@@ -64,6 +64,7 @@ def evaluate_decode_result(data,
         predict_tokens = tokenize_code(code)
     except:
         logging.error('error in tokenizing [%s]', code)
+        predict_tokens = []
 
     if refer_tokens == predict_tokens:
         acc += 1

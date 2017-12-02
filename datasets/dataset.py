@@ -2,6 +2,7 @@ from copy import deepcopy
 import torch.utils.data as data
 import torch
 import os
+import logging
 
 import Constants
 from natural_lang.tree import Tree
@@ -76,10 +77,10 @@ class Dataset(data.Dataset):
         parents_file = os.path.join(data_dir, '{}.in.{}_parents'.format(file_name, parents_prefix[syntax]))
         tokens_file = os.path.join(data_dir, '{}.in.tokens'.format(file_name))
 
-        print('Reading query trees...')
+        logging.info('Reading query trees...')
         self.query_trees = self.read_query_trees(parents_file)
 
-        print('Reading query tokens...')
+        logging.info('Reading query tokens...')
         self.queries, self.query_tokens = self.read_query(tokens_file)
         self.queries = self.fix_query_length(self.queries)
         self.queries = torch.stack(self.queries)
@@ -147,13 +148,13 @@ class Dataset(data.Dataset):
         return root
 
     def load_output(self, data_dir, file_name):
-        print('Reading code files...')
+        logging.info('Reading code files...')
         trees_file = os.path.join(data_dir, '{}.out.trees.bin'.format(file_name))
         code_file = os.path.join(data_dir, '{}.out.bin'.format(file_name))
         self.code_trees = deserialize_from_file(trees_file)
         self.codes = deserialize_from_file(code_file)
 
-        print('Constructing code representation...')
+        logging.info('Constructing code representation...')
         self.actions = []
 
         for code_tree, query_tokens in tqdm(zip(self.code_trees, self.query_tokens)):
@@ -224,7 +225,7 @@ class Dataset(data.Dataset):
         max_example_action_num = self.config.max_example_action_num
         terminal_vocab = self.terminal_vocab
 
-        print('Initializing data matrices...')
+        logging.info('Initializing data matrices...')
         self.tgt_node_seq = torch.LongTensor(self.size, max_example_action_num).zero_()
         self.tgt_par_rule_seq = torch.LongTensor(self.size, max_example_action_num).zero_()
         self.tgt_par_t_seq = torch.LongTensor(self.size, max_example_action_num).zero_()

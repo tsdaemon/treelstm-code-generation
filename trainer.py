@@ -27,6 +27,7 @@ class Trainer(object):
         history_valid_perf = []
         history_valid_bleu = []
         history_valid_acc = []
+        history_errors = []
         best_model_file = None
         for epoch in range(max_epoch):
             mean_loss = self.train(train_data, epoch)
@@ -46,6 +47,7 @@ class Trainer(object):
 
             history_valid_acc.append(accuracy)
             history_valid_bleu.append(bleu)
+            history_errors.append(errors)
             val_perf = eval(self.config.valid_metric)
 
             if val_perf > 0.2:
@@ -62,7 +64,7 @@ class Trainer(object):
 
             history_valid_perf.append(val_perf)
             # save performance metrics on every step
-            hist_df = pd.DataFrame(list(zip(history_valid_bleu, history_valid_acc)), columns=['BLEU', 'Accuracy'])
+            hist_df = pd.DataFrame(list(zip(history_valid_bleu, history_valid_acc, history_errors)), columns=['BLEU', 'Accuracy', 'Errors'])
             history_file = os.path.join(results_dir, 'hist.csv')
             hist_df.to_csv(history_file, index=False)
 
