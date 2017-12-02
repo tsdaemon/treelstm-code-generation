@@ -40,9 +40,9 @@ class Trainer(object):
             logging.info('Saving model at {}.'.format(model_path))
             torch.save(self.model, model_path)
 
-            bleu, accuracy = self.validate(dev_data, epoch, epoch_dir)
-            logging.info('Epoch {} validation finished, bleu: {}, accuracy {}.'.format(
-                epoch + 1, bleu, accuracy))
+            bleu, accuracy, errors = self.validate(dev_data, epoch, epoch_dir)
+            logging.info('Epoch {} validation finished, bleu: {}, accuracy: {}, errors: {}.'.format(
+                epoch + 1, bleu, accuracy, errors))
 
             history_valid_acc.append(accuracy)
             history_valid_bleu.append(bleu)
@@ -73,9 +73,9 @@ class Trainer(object):
             if os.path.exists(dir):
                 shutil.rmtree(dir)
             os.mkdir(dir)
-            bleu, accuracy = self.validate(test_data, -100, dir)
-            logging.info('Test set evaluation finished, bleu: {}, accuracy {}.'.format(
-                epoch + 1, bleu, accuracy))
+            bleu, accuracy, errors = self.validate(test_data, -100, dir)
+            logging.info('Test set evaluation finished, bleu: {}, accuracy: {}, errors: {}.'.format(
+                bleu, accuracy, errors))
 
     def train(self, dataset, epoch):
         self.model.train()
@@ -106,7 +106,8 @@ class Trainer(object):
     def validate(self, dataset, epoch, out_dir):
         self.model.eval()
         cum_bleu, cum_acc, cum_oracle_bleu, cum_oracle_acc = 0.0, 0.0, 0.0, 0.0
-        all_references, all_predictions = [], []
+        errors = 0
+        # all_references, all_predictions = [], []
 
         for idx in tqdm(range(len(dataset)), desc='Testing epoch '+str(epoch+1)+''):
             enc_tree, query, query_tokens, \
@@ -121,8 +122,9 @@ class Trainer(object):
                     code = astor.to_source(ast_tree)
                     candidats.append((cid, cand, ast_tree, code))
                 except:
-                    logging.error("Exception in converting tree to code:"
+                    logging.debug("Exception in converting tree to code:"
                                   "id: {}, beam pos: {}".format(idx, cid))
+                    errors += 1
 
             bleu, oracle_bleu, acc, oracle_acc, \
             refer_tokens_for_bleu, pred_tokens_for_bleu = evaluate_decode_result(
@@ -133,13 +135,14 @@ class Trainer(object):
             cum_oracle_bleu += oracle_bleu
             cum_acc += acc
 
-            all_references.append([refer_tokens_for_bleu])
-            all_predictions.append(pred_tokens_for_bleu)
+            # all_references.append([refer_tokens_for_bleu])
+            # all_predictions.append(pred_tokens_for_bleu)
 
         cum_bleu /= len(dataset)
         cum_acc /= len(dataset)
         cum_oracle_bleu /= len(dataset)
         cum_oracle_acc /= len(dataset)
+        errors /= len(dataset)
 
         # logging.info('corpus level bleu: %f',
         #              corpus_bleu(all_references, all_predictions,
@@ -149,7 +152,7 @@ class Trainer(object):
         # logging.info('oracle bleu: %f', cum_oracle_bleu)
         # logging.info('oracle accuracy: %f', cum_oracle_acc)
 
-        return cum_bleu, cum_acc
+        return cum_bleu, cum_acc, errors
 
     def visualize(self, dataset, writer):
         self.model.train()
