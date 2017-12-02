@@ -49,7 +49,7 @@ class Trainer(object):
             val_perf = eval(self.config.valid_metric)
 
             if val_perf > 0.2:
-                if val_perf > np.array(history_valid_perf).max():
+                if len(history_valid_perf) == 0 or val_perf > np.array(history_valid_perf).max():
                     patience_counter = 0
                     logging.info('Found best model on epoch {}'.format(epoch+1))
                     best_model_file = model_path
