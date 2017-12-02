@@ -118,14 +118,15 @@ if __name__ == '__main__':
     save_vocab(os.path.join(hs_dir, 'vocab.txt'), vocab)
 
     logging.info('Build vocab embeddings')
-    vocab = Vocab(filename=os.path.join(hs_dir, 'vocab.txt'), data=[Constants.UNK_WORD, Constants.EOS_WORD])
+    vocab = Vocab(filename=os.path.join(hs_dir, 'vocab.txt'),
+                  data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
     emb_file = os.path.join(hs_dir, 'word_embeddings.pth')
     glove_file = os.path.join(data_dir, 'glove/glove.840B.300d')
     # load glove embeddings and vocab
     glove_vocab, glove_emb = load_word_vectors(glove_file)
-    emb = torch.Tensor(vocab.size(), glove_emb.size(1)).normal_(-0.05, 0.05)
+    emb = torch.Tensor(vocab.size(), glove_emb.size(1)).normal_(0.0, 0.1)
     # zero out the embeddings for padding and other special words if they are absent in vocab
-    for idx, item in enumerate([Constants.UNK_WORD, Constants.EOS_WORD]):
+    for idx, item in enumerate([Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD]):
         emb[idx].zero_()
     for word in vocab.labelToIdx.keys():
         if glove_vocab.getIndex(word):
