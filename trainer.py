@@ -142,7 +142,7 @@ class Trainer(object):
         cum_acc /= len(dataset)
         cum_oracle_bleu /= len(dataset)
         cum_oracle_acc /= len(dataset)
-        errors /= len(dataset)
+        errors /= len(dataset)*self.config.beam_size
 
         # logging.info('corpus level bleu: %f',
         #              corpus_bleu(all_references, all_predictions,
