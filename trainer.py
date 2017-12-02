@@ -27,7 +27,7 @@ class Trainer(object):
         history_valid_perf = []
         history_valid_bleu = []
         history_valid_acc = []
-        best_model_params = best_model_by_acc = best_model_by_bleu = None
+        best_model_file = None
         for epoch in range(max_epoch):
             mean_loss = self.train(train_data, epoch)
             logging.info('Epoch {} training finished, mean loss: {}.'.format(epoch+1, mean_loss))
@@ -52,6 +52,7 @@ class Trainer(object):
                 if val_perf > np.array(history_valid_perf).max():
                     patience_counter = 0
                     logging.info('Found best model on epoch {}'.format(epoch+1))
+                    best_model_file = model_path
                 else:
                     patience_counter += 1
                     logging.info('Hitting patience_counter: {}'.format(patience_counter))
@@ -64,6 +65,17 @@ class Trainer(object):
             hist_df = pd.DataFrame(list(zip(history_valid_bleu, history_valid_acc)), columns=['BLEU', 'Accuracy'])
             history_file = os.path.join(results_dir, 'hist.csv')
             hist_df.to_csv(history_file, index=False)
+
+        # test set evaluation
+        if best_model_file is not None:
+            self.model = torch.load(best_model_file)
+            dir = os.path.join(results_dir, 'final')
+            if os.path.exists(dir):
+                shutil.rmtree(dir)
+            os.mkdir(dir)
+            bleu, accuracy = self.validate(test_data, -100, dir)
+            logging.info('Test set evaluation finished, bleu: {}, accuracy {}.'.format(
+                epoch + 1, bleu, accuracy))
 
     def train(self, dataset, epoch):
         self.model.train()
