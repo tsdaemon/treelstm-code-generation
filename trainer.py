@@ -11,6 +11,7 @@ import pandas as pd
 from lang.parse import decode_tree_to_python_ast
 from utils.general import get_batches
 from utils.eval import evaluate_decode_result
+from utils.io import send_telegram
 
 
 class Trainer(object):
@@ -29,6 +30,7 @@ class Trainer(object):
         history_valid_acc = []
         history_errors = []
         best_model_file = None
+        best_bleu, best_accuracy = 0.0
         for epoch in range(max_epoch):
             mean_loss = self.train(train_data, epoch)
             logging.info('Epoch {} training finished, mean loss: {}.'.format(epoch+1, mean_loss))
@@ -55,6 +57,8 @@ class Trainer(object):
                     patience_counter = 0
                     logging.info('Found best model on epoch {}'.format(epoch+1))
                     best_model_file = model_path
+                    best_accuracy = accuracy
+                    best_bleu = bleu
                 else:
                     patience_counter += 1
                     logging.info('Hitting patience_counter: {}'.format(patience_counter))
@@ -78,6 +82,8 @@ class Trainer(object):
             bleu, accuracy, errors = self.validate(test_data, -100, dir)
             logging.info('Test set evaluation finished, bleu: {}, accuracy: {}, errors: {}.'.format(
                 bleu, accuracy, errors))
+
+            self.report_bot(bleu, accuracy, best_bleu, best_accuracy)
 
     def train(self, dataset, epoch):
         self.model.train()
@@ -171,3 +177,9 @@ class Trainer(object):
 
         loss.backward()
         writer.add_graph(self.model, loss)
+
+    def report_bot(self, test_bleu, test_accuracy, val_bleu, val_accuracy):
+        msg = "Finished experiment with config {}.\nTest BLEU: *{}*, test accuracy: *{}*, " \
+              "validation BLEU: *{}*, validation accuracy: *{}*."\
+            .format(self.config, test_bleu, test_accuracy, val_bleu, val_accuracy)
+        send_telegram(msg)

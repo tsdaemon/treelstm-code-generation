@@ -1,4 +1,5 @@
 import pickle
+import subprocess
 
 
 def deserialize_from_file(path):
@@ -10,3 +11,8 @@ def deserialize_from_file(path):
 def serialize_to_file(obj, path, protocol=pickle.HIGHEST_PROTOCOL):
     with open(path, 'wb') as f:
         pickle.dump(obj, f, protocol=protocol)
+
+
+def send_telegram(msg):
+    subprocess.run(['telegram-send', msg])
+

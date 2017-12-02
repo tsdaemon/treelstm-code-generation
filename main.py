@@ -71,6 +71,8 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     trainer = Trainer(model, args, optimizer)
 
+    # trainer.report_bot(0, 0, 0, 0)
+
     if args.mode == 'train':
         trainer.train_all(train_data, dev_data, test_data, args.output_dir)
     elif args.mode == 'validate':
