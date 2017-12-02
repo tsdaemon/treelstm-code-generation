@@ -85,7 +85,7 @@ class CondAttLSTM(nn.Module):
     def forward(self, t, x, context, hist_h, h, c, parent_h):
         # dropout normalization
         x *= 1.0-self.dropout
-        dr_H = dropout_matrix(4, p=self.dropout, train=False)
+        dr_H = dropout_matrix(4, p=self.dropout, train=False, cuda=self.is_cuda)
         # (batch_size, output_dim)
         xi, xf, xo, xc = self.W_ix(x), self.W_fx(x), self.W_ox(x), self.W_cx(x)
 
@@ -170,8 +170,8 @@ class CondAttLSTM(nn.Module):
     def forward_train(self, X, context, h, c, parent_t):
         length = X.shape[1]
         # (4, batch_size, input_dim)
-        dr_X = dropout_matrix(4, X.shape[0], 1, X.shape[2], p=self.dropout)
-        dr_H = dropout_matrix(4, X.shape[0], self.output_dim, p=self.dropout)
+        dr_X = dropout_matrix(4, X.shape[0], 1, X.shape[2], p=self.dropout, cuda=self.is_cuda)
+        dr_H = dropout_matrix(4, X.shape[0], self.output_dim, p=self.dropout, cuda=self.is_cuda)
         # calculate all X dense transformation at once
         # (batch_size, max_sequence_length, output_dim)
         Xi, Xf, Xo, Xc = self.W_ix(X*dr_X[0]), self.W_fx(X*dr_X[1]), self.W_ox(X*dr_X[2]), self.W_cx(X*dr_X[3])
