@@ -73,29 +73,33 @@ class CondAttLSTM(nn.Module):
         init.xavier_uniform(self.h_att.weight)
         self.h_att.bias = nn.Parameter(torch.FloatTensor(1).zero_())
 
-        self.dropout = nn.AlphaDropout(p=config.dropout)
+        # self.dropout = nn.AlphaDropout(p=config.dropout)
         self.softmax = nn.Softmax(dim=-1);
 
         self.is_cuda = config.cuda
         self.parent_hidden_state_feed = config.parent_hidden_state_feed
+        self.dropout = config.dropout
         self.config = config
 
     # one time step at the time
     def forward(self, t, x, context, hist_h, h, c, parent_h):
-        # (batch_size, input_dim)
-        x = self.dropout(x)
+        # dropout normalization
+        x *= 1.0-self.dropout
+        dr_H = dropout_matrix(4, p=self.dropout, train=False)
         # (batch_size, output_dim)
         xi, xf, xo, xc = self.W_ix(x), self.W_fx(x), self.W_ox(x), self.W_cx(x)
 
         return self.forward_node(t,
                                  xi, xf, xo, xc,
                                  context, hist_h,
-                                 h, c, parent_h)
+                                 h, c, parent_h,
+                                 dr_H)
 
     def forward_node(self, t,
                      xi, xf, xo, xc,
                      context, hist_h,
-                     h, c, par_h):
+                     h, c, par_h,
+                     dr_H):
         # (batch_size, context_size, att_layer1_dim)
         context_att_trans = self.att_ctx(context)
 
@@ -147,13 +151,16 @@ class CondAttLSTM(nn.Module):
             par_h *= 0.
 
         # (batch_size, output_dim + context_dim + output_dim + output_dim)
-        h_comb = torch.cat([h, ctx_vec, par_h, h_ctx_vec], dim=-1)
+        h_comb_i = torch.cat([h*dr_H[0], ctx_vec, par_h, h_ctx_vec], dim=-1)
+        h_comb_f = torch.cat([h*dr_H[1], ctx_vec, par_h, h_ctx_vec], dim=-1)
+        h_comb_c = torch.cat([h*dr_H[2], ctx_vec, par_h, h_ctx_vec], dim=-1)
+        h_comb_o = torch.cat([h*dr_H[3], ctx_vec, par_h, h_ctx_vec], dim=-1)
 
         # (batch_size, output_dim)
-        i = F.sigmoid(xi + self.W_i(h_comb))
-        f = F.sigmoid(xf + self.W_f(h_comb))
-        c = f * c + i * F.tanh(xc + self.W_c(h_comb))
-        o = F.sigmoid(xo + self.W_o(h_comb))
+        i = F.sigmoid(xi + self.W_i(h_comb_i))
+        f = F.sigmoid(xf + self.W_f(h_comb_f))
+        c = f * c + i * F.tanh(xc + self.W_c(h_comb_c))
+        o = F.sigmoid(xo + self.W_o(h_comb_o))
 
         h = o * F.tanh(c)
 
@@ -162,11 +169,12 @@ class CondAttLSTM(nn.Module):
     # all inputs at the time (teacher forcing)
     def forward_train(self, X, context, h, c, parent_t):
         length = X.shape[1]
-        # (batch_size, max_sequence_length, input_dim)
-        X = self.dropout(X)
+        # (4, batch_size, input_dim)
+        dr_X = dropout_matrix(4, X.shape[0], 1, X.shape[2], p=self.dropout)
+        dr_H = dropout_matrix(4, X.shape[0], self.output_dim, p=self.dropout)
         # calculate all X dense transformation at once
         # (batch_size, max_sequence_length, output_dim)
-        Xi, Xf, Xo, Xc = self.W_ix(X), self.W_fx(X), self.W_ox(X), self.W_cx(X)
+        Xi, Xf, Xo, Xc = self.W_ix(X*dr_X[0]), self.W_fx(X*dr_X[1]), self.W_ox(X*dr_X[2]), self.W_cx(X*dr_X[3])
         # (batch_size, max_sequence_length, decoder_hidden_dim)
         output_h = None
         # (batch_size, max_sequence_length, encoder_hidden_dim)
@@ -193,7 +201,8 @@ class CondAttLSTM(nn.Module):
             h, c, ctx_vec = self.forward_node(t,
                                               xi, xf, xo, xc,
                                               context, output_h,
-                                              h, c, par_h)
+                                              h, c, par_h,
+                                              dr_H)
             if output_h is None:
                 output_h = h.unsqueeze(1)
             else:

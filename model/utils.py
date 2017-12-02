@@ -66,8 +66,20 @@ def add_padding_and_stack(tensors, cuda, dim=0, max_length=None):
 
     return torch.stack(result)
 
+
 def parameter_init_zero(*dims):
     return nn.Parameter(torch.FloatTensor(*dims).zero_())
+
+
+def dropout_matrix(*dims, p=0.2, train=True):
+    assert p < 1.0 and p > 0.0, "Invalid probability: {}".format(p)
+    prob = 1-p
+    # all 0.8, ok for evaluation
+    d = Var(torch.FloatTensor(*dims).fill_(prob))
+    if train:
+        # all 1 or 0
+        d = d.bernoulli()
+    return d
 
 
 
