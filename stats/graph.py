@@ -17,6 +17,14 @@ if __name__ == '__main__':
     hs_tree_line = read_one_line_from_file(hs_tree_path)
     hs_tokens = read_one_line_from_file(hs_tokens_path).split()
     hs_categories = read_one_line_from_file(hs_category_path).split()
-    hs_tree = read_tree(hs_tree_line)
-    hs_tree.plot(hs_tokens, hs_categories)
+
+    hs_labels = []
+    for i in range(len(hs_categories)):
+        label = hs_categories[i]
+        if len(hs_tokens) > i and label != hs_tokens[i]:
+            label += ' - ' + hs_tokens[i]
+        hs_labels.append(label)
+
+    hs_tree = read_tree(hs_tree_line, hs_labels)
+    hs_tree.plot(hs_labels)
 

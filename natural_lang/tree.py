@@ -1,8 +1,10 @@
 import networkx as nx
+from networkx.drawing.nx_agraph import graphviz_layout
+from networkx.drawing.nx_pydot import pydot_layout
+import matplotlib.pyplot as plt
 
 
-
-def read_tree(line):
+def read_tree(line, labels=None):
     parents = list(map(int, line.split()))
     trees = dict()
     root = None
@@ -21,6 +23,10 @@ def read_tree(line):
                     tree.add_child(prev)
                 trees[idx - 1] = tree
                 tree.idx = idx - 1
+                if labels is not None:
+                    tree.label = labels[tree.idx]
+                else:
+                    tree.label = str(tree.idx)
                 if parent - 1 in trees.keys():
                     trees[parent - 1].add_child(tree)
                     break

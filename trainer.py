@@ -195,6 +195,6 @@ class Trainer(object):
         writer.add_graph(self.model, loss)
 
     def report_bot(self, report_dict):
-        msg = "Finished experiment with config {}.\n\n"
+        msg = "Finished experiment with config {}.\n\n".format(self.config)
         msg += "\n".join(["{}: {}.".format(k, v) for k, v in report_dict.items()])
         send_telegram(msg)

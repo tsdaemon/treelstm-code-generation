@@ -79,7 +79,7 @@ if __name__ == '__main__':
     logging.info('=' * 80)
 
     hs_source_dir = os.path.join(data_dir, 'card2code/third_party/hearthstone/')
-    hs_dir = os.path.join(base_dir, 'preprocessed/hs/no_unary_closures')
+    hs_dir = os.path.join(base_dir, 'preprocessed/hs/unary_closures')
 
     if os.path.exists(hs_dir):
         shutil.rmtree(hs_dir)
@@ -144,8 +144,8 @@ if __name__ == '__main__':
     parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'), os.path.join(test_dir, 'test.out.bin'))
     parse_trees = parse_trees_dev+parse_trees_train+parse_trees_test
 
-    # logging.info('Applying unary closures')
-    # do_unary_closures(parse_trees, 30)
+    logging.info('Applying unary closures')
+    do_unary_closures(parse_trees, 30)
 
     logging.info('Saving trees')
     write_trees(parse_trees_dev, os.path.join(dev_dir, 'dev.out.trees'))
