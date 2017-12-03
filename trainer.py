@@ -126,7 +126,7 @@ class Trainer(object):
         errors = 0
         # all_references, all_predictions = [], []
 
-        for idx in tqdm(range(10), desc='Testing epoch '+str(epoch+1)+''):
+        for idx in tqdm(range(len(dataset)), desc='Testing epoch '+str(epoch+1)+''):
             enc_tree, query, query_tokens, \
             _, _, _, _, _, \
             ref_code, ref_code_tree = dataset[idx]
