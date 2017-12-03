@@ -68,6 +68,32 @@ public class CCGParse {
     return nextId;
   }
 
+  private static String[] constTreeCategories(SyntaxTreeNode tree) {
+    List<SyntaxTreeNode.SyntaxTreeNodeLeaf> leaves = tree.getWords();
+    int size = getSize(tree);
+
+    String[] categories = new String[size];
+    if(!tree.isLeaf()) {
+      parseCategories(categories, tree, 0, leaves.size() + 1);
+    }
+
+    return categories;
+  }
+
+  private static int parseCategories(String[] categories, SyntaxTreeNode tree, int parentId, int currentId) {
+    categories[currentId-1] = tree.getCategory().toString();
+    int nextId = currentId;
+    for(SyntaxTreeNode node: tree.getChildren()) {
+      if(node.isLeaf()) {
+        categories[node.getHeadIndex()] = node.getCategory().toString();
+      }
+      else {
+        nextId = parseCategories(categories, node, currentId, nextId+1);
+      }
+    }
+    return nextId;
+  }
+
   private static int getSize(SyntaxTreeNode tree) {
     if (tree.isLeaf()) {
       return 1;
@@ -92,16 +118,31 @@ public class CCGParse {
     parentWriter.write(sb.toString());
   }
 
+  private static void printCategories(String[] categories, BufferedWriter parentWriter) throws IOException {
+    StringBuilder sb = new StringBuilder();
+    int size = categories.length;
+    for (int i = 0; i < size - 1; i++) {
+      sb.append(categories[i]);
+      sb.append(' ');
+    }
+    sb.append(categories[size - 1]);
+    sb.append('\n');
+    parentWriter.write(sb.toString());
+  }
+
   public static void main(String[] args) throws Exception {
     Properties props = StringUtils.argsToProperties(args);
-    if (!props.containsKey("parentpath") || !props.containsKey("modelpath")) {
+    if (!props.containsKey("parentpath") ||
+        !props.containsKey("catpath") ||
+        !props.containsKey("modelpath")) {
       System.err.println(
-        "usage: java CCGParse -parentpath <parentpath> -modelpath <modelpath>");
+        "usage: java CCGParse -parentpath <parentpath> -catpath <catpath> -modelpath <modelpath>");
       System.exit(1);
     }
 
     String parentPath = props.getProperty("parentpath");
     String modelPath = props.getProperty("modelpath");
+    String categoryPath = props.getProperty("catpath");
 
     System.err.println("Loading model...");
 
@@ -126,6 +167,9 @@ public class CCGParse {
     BufferedWriter parentWriter = new BufferedWriter
         (new OutputStreamWriter(new FileOutputStream(parentPath), StandardCharsets.UTF_8));
 
+    BufferedWriter categoryWriter = new BufferedWriter
+        (new OutputStreamWriter(new FileOutputStream(categoryPath), StandardCharsets.UTF_8));
+
     Scanner stdin = new Scanner(System.in);
     int count = 0;
     long start = System.currentTimeMillis();
@@ -137,10 +181,13 @@ public class CCGParse {
 
         // produce parent pointer representation
         int[] parents = constTreeParents(parse);
+        String[] categories = constTreeCategories(parse);
 
         printParents(parents, parentWriter);
+        printCategories(categories, categoryWriter);
       } else {
         parentWriter.write("\n");
+        categoryWriter.write("\n");
       }
 
       count++;

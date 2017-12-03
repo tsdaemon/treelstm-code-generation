@@ -27,11 +27,13 @@ class Trainer(object):
         history_valid_bleu = []
         history_valid_acc = []
         history_errors = []
+        history_loss = []
         best_model_file = None
         validation_bleu, validation_accuracy, validation_errors = 0.0, 0.0, 0.0
         for epoch in range(max_epoch):
-            mean_loss = self.train(train_data, epoch)
-            logging.info('Epoch {} training finished, mean loss: {}.'.format(epoch+1, mean_loss))
+            loss = self.train(train_data, epoch)
+            history_loss.append(loss)
+            logging.info('Epoch {} training finished, loss: {}.'.format(epoch+1, loss))
 
             epoch_dir = os.path.join(results_dir, str(epoch+1))
             if os.path.exists(epoch_dir):
@@ -67,7 +69,11 @@ class Trainer(object):
 
             history_valid_perf.append(val_perf)
             # save performance metrics on every step
-            hist_df = pd.DataFrame(list(zip(history_valid_bleu, history_valid_acc, history_errors)), columns=['BLEU', 'Accuracy', 'Errors'])
+            hist_df = pd.DataFrame(list(zip(history_valid_bleu,
+                                            history_valid_acc,
+                                            history_errors,
+                                            history_loss)),
+                                   columns=['BLEU', 'Accuracy', 'Errors', 'Loss'])
             history_file = os.path.join(results_dir, 'hist.csv')
             hist_df.to_csv(history_file, index=False)
 
@@ -190,5 +196,5 @@ class Trainer(object):
 
     def report_bot(self, report_dict):
         msg = "Finished experiment with config {}.\n\n"
-        msg += "\n".jooin(["{}: {}.".format(k, v) for k, v in report_dict.items()])
+        msg += "\n".join(["{}: {}.".format(k, v) for k, v in report_dict.items()])
         send_telegram(msg)

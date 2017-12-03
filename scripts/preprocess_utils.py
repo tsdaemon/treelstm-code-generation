@@ -97,8 +97,9 @@ def constituency_parse(filepath):
     dirpath = os.path.dirname(filepath)
     filepre = os.path.splitext(os.path.basename(filepath))[0]
     parentpath = os.path.join(dirpath, filepre + '.constituency_parents')
-    cmd = ('java -cp %s ConstituencyParse -parentpath %s < %s'
-        % (classpath, parentpath, filepath))
+    catpath = os.path.join(dirpath, filepre + '.constituency_categories')
+    cmd = ('java -cp {} ConstituencyParse -parentpath {} -catpath {} < {}'.format
+        (classpath, parentpath, catpath, filepath))
     os.system(cmd)
 
 
@@ -107,8 +108,9 @@ def ccg_parse(filepath):
     dirpath = os.path.dirname(filepath)
     filepre = os.path.splitext(os.path.basename(filepath))[0]
     parentpath = os.path.join(dirpath, filepre + '.ccg_parents')
-    cmd = ('java -cp %s CCGParse -parentpath %s -modelpath lib/easyccg/model < %s'
-           % (classpath, parentpath, filepath))
+    catpath = os.path.join(dirpath, filepre + '.ccg_categories')
+    cmd = ('java -cp {} CCGParse -parentpath {} -catpath {} -modelpath '
+           'lib/easyccg/model < {}'.format(classpath, parentpath, catpath, filepath))
     os.system(cmd)
 
 

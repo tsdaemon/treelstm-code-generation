@@ -1,5 +1,7 @@
-torch
 pandas
 numpy
 tqdm
 astor
+networkx
+pydot
+torch=0.4.0

@@ -24,6 +24,7 @@ import java.util.Properties;
 import java.util.Scanner;
 
 public class ConstituencyParse {
+  private BufferedWriter categoryWriter;
   private BufferedWriter parentWriter;
   private LexicalizedParser parser;
   private TreeBinarizer binarizer;
@@ -32,9 +33,12 @@ public class ConstituencyParse {
 
   private static final String PCFG_PATH = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
 
-  public ConstituencyParse(String parentPath) throws IOException {
+  public ConstituencyParse(String parentPath, String categoriesPath) throws IOException {
     parentWriter = new BufferedWriter
         (new OutputStreamWriter(new FileOutputStream(parentPath), StandardCharsets.UTF_8));
+
+    categoryWriter = new BufferedWriter
+        (new OutputStreamWriter(new FileOutputStream(categoriesPath), StandardCharsets.UTF_8));
 
     parser = LexicalizedParser.loadModel(PCFG_PATH);
     binarizer = TreeBinarizer.simpleTreeBinarizer(
@@ -101,6 +105,48 @@ public class ConstituencyParse {
     return parents;
   }
 
+  public String[] constTreeCategories(Tree tree) {
+    Tree binarized = binarizer.transformTree(tree);
+    Tree collapsedUnary = transformer.transformTree(binarized);
+    Trees.convertToCoreLabels(collapsedUnary);
+    collapsedUnary.indexSpans();
+    List<Tree> leaves = collapsedUnary.getLeaves();
+    int size = collapsedUnary.size() - leaves.size();
+    String[] categories = new String[size];
+    HashMap<Integer, Integer> index = new HashMap<Integer, Integer>();
+
+    int idx = leaves.size();
+    int leafIdx = 0;
+    for (Tree leaf : leaves) {
+      Tree cur = leaf.parent(collapsedUnary); // go to preterminal
+      int curIdx = leafIdx++;
+      boolean done = false;
+      while (!done) {
+        Tree parent = cur.parent(collapsedUnary);
+        if (parent == null) {
+          categories[curIdx] = "S";
+          break;
+        }
+
+        int parentIdx;
+        int parentNumber = parent.nodeNumber(collapsedUnary);
+        if (!index.containsKey(parentNumber)) {
+          parentIdx = idx++;
+          index.put(parentNumber, parentIdx);
+        } else {
+          parentIdx = index.get(parentNumber);
+          done = true;
+        }
+
+        categories[curIdx] = cur.label().toString();
+        cur = parent;
+        curIdx = parentIdx;
+      }
+    }
+
+    return categories;
+  }
+
   public void printParents(int[] parents) throws IOException {
     StringBuilder sb = new StringBuilder();
     int size = parents.length;
@@ -113,24 +159,39 @@ public class ConstituencyParse {
     parentWriter.write(sb.toString());
   }
 
+  public void printCategories(String[] categories) throws IOException {
+    StringBuilder sb = new StringBuilder();
+    int size = categories.length;
+    for (int i = 0; i < size - 1; i++) {
+      sb.append(categories[i]);
+      sb.append(' ');
+    }
+    sb.append(categories[size - 1]);
+    sb.append('\n');
+    categoryWriter.write(sb.toString());
+  }
+
   public void printNewLine() throws IOException {
     parentWriter.write("\n");
+    categoryWriter.write("\n");
   }
 
   public void close() throws IOException {
     parentWriter.close();
+    categoryWriter.close();
   }
 
   public static void main(String[] args) throws Exception {
     Properties props = StringUtils.argsToProperties(args);
-    if (!props.containsKey("parentpath")) {
+    if (!props.containsKey("parentpath") || !props.containsKey("catpath")) {
       System.err.println(
-        "usage: java ConstituencyParse -parentpath <parentpath>");
+        "usage: java ConstituencyParse -parentpath <parentpath> -catpath <catpath>");
       System.exit(1);
     }
 
     String parentPath = props.getProperty("parentpath");
-    ConstituencyParse processor = new ConstituencyParse(parentPath);
+    String categoryPath = props.getProperty("catpath");
+    ConstituencyParse processor = new ConstituencyParse(parentPath, categoryPath);
 
     Scanner stdin = new Scanner(System.in);
     int count = 0;
@@ -144,8 +205,10 @@ public class ConstituencyParse {
 
         // produce parent pointer representation
         int[] parents = processor.constTreeParents(parse);
+        String[] categories = processor.constTreeCategories(parse);
 
         processor.printParents(parents);
+        processor.printCategories(categories);
       } else {
         processor.printNewLine();
       }

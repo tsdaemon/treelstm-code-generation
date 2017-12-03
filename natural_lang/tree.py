@@ -1,6 +1,7 @@
 import networkx as nx
 
 
+
 def read_tree(line):
     parents = list(map(int, line.split()))
     trees = dict()
@@ -85,7 +86,7 @@ class Tree(object):
 
         return rels
 
-    def plot(self):
+    def plot(self, tokens, categories):
         G = nx.DiGraph()
         G.add_edges_from(self.get_relations())
         p = nx.drawing.nx_pydot.to_pydot(G)
