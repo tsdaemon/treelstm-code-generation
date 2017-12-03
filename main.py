@@ -11,6 +11,7 @@ from utils.general import init_logging
 from model.x2x import Tree2TreeModel
 from config import parser
 from trainer import Trainer
+from model.utils import device_map_location
 
 
 if __name__ == '__main__':
@@ -58,7 +59,8 @@ if __name__ == '__main__':
     # load model
     if args.model:
         logging.info('Loading model: {}'.format(args.model))
-        model = torch.load(args.model)
+        # device map location allows to load model trained on GPU on CPU env and vice versa
+        model = torch.load(args.model, device_map_location(args.cuda))
     else:
         logging.info('Creating new model'.format(args.model))
         emb_file = os.path.join(args.data_dir, 'word_embeddings.pth')

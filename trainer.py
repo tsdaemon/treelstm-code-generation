@@ -22,15 +22,13 @@ class Trainer(object):
 
     def train_all(self, train_data, dev_data, test_data, results_dir):
         max_epoch = self.config.max_epoch
-
-        cum_updates = 0
         patience_counter = 0
         history_valid_perf = []
         history_valid_bleu = []
         history_valid_acc = []
         history_errors = []
         best_model_file = None
-        best_bleu, best_accuracy = 0.0, 0.0
+        validation_bleu, validation_accuracy, validation_errors = 0.0, 0.0, 0.0
         for epoch in range(max_epoch):
             mean_loss = self.train(train_data, epoch)
             logging.info('Epoch {} training finished, mean loss: {}.'.format(epoch+1, mean_loss))
@@ -57,8 +55,9 @@ class Trainer(object):
                     patience_counter = 0
                     logging.info('Found best model on epoch {}'.format(epoch+1))
                     best_model_file = model_path
-                    best_accuracy = accuracy
-                    best_bleu = bleu
+                    validation_accuracy = accuracy
+                    validation_bleu = bleu
+                    validation_error = errors
                 else:
                     patience_counter += 1
                     logging.info('Hitting patience_counter: {}'.format(patience_counter))
@@ -82,8 +81,17 @@ class Trainer(object):
             bleu, accuracy, errors = self.validate(test_data, -100, dir)
             logging.info('Test set evaluation finished, bleu: {}, accuracy: {}, errors: {}.'.format(
                 bleu, accuracy, errors))
-
-            self.report_bot(bleu, accuracy, best_bleu, best_accuracy)
+            report_result = {
+                "Test BLEU": bleu,
+                "Test accuracy": accuracy,
+                "Test error": errors,
+                "Validation BLEU": validation_bleu,
+                "Validation accuracy": validation_accuracy,
+                "Validation error": validation_error,
+                "Last epoch": epoch,
+                "Mean error": np.mean(history_errors)
+            }
+            self.report_bot(report_result)
 
     def train(self, dataset, epoch):
         self.model.train()
@@ -113,11 +121,12 @@ class Trainer(object):
 
     def validate(self, dataset, epoch, out_dir):
         self.model.eval()
+        #self.model.before_eval()
         cum_bleu, cum_acc, cum_oracle_bleu, cum_oracle_acc = 0.0, 0.0, 0.0, 0.0
         errors = 0
         # all_references, all_predictions = [], []
 
-        for idx in tqdm(range(len(dataset)), desc='Testing epoch '+str(epoch+1)+''):
+        for idx in tqdm(range(10), desc='Testing epoch '+str(epoch+1)+''):
             enc_tree, query, query_tokens, \
             _, _, _, _, _, \
             ref_code, ref_code_tree = dataset[idx]
@@ -145,6 +154,7 @@ class Trainer(object):
 
             # all_references.append([refer_tokens_for_bleu])
             # all_predictions.append(pred_tokens_for_bleu)
+        #self.model.after_eval()
 
         cum_bleu /= len(dataset)
         cum_acc /= len(dataset)
@@ -178,8 +188,7 @@ class Trainer(object):
         loss.backward()
         writer.add_graph(self.model, loss)
 
-    def report_bot(self, test_bleu, test_accuracy, val_bleu, val_accuracy):
-        msg = "Finished experiment with config {}.\nTest BLEU: *{}*, test accuracy: *{}*, " \
-              "validation BLEU: *{}*, validation accuracy: *{}*."\
-            .format(self.config, test_bleu, test_accuracy, val_bleu, val_accuracy)
+    def report_bot(self, report_dict):
+        msg = "Finished experiment with config {}.\n\n"
+        msg += "\n".jooin(["{}: {}.".format(k, v) for k, v in report_dict.items()])
         send_telegram(msg)

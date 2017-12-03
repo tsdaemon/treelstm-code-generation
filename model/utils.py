@@ -84,4 +84,11 @@ def dropout_matrix(*dims, p=0.2, train=True, cuda=False):
     return d
 
 
+def device_map_location(cuda):
+    if cuda:
+        return lambda storage, loc: storage.cuda()
+    else:
+        return lambda storage, loc: storage
+
+
 

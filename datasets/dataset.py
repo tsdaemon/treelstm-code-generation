@@ -5,7 +5,7 @@ import os
 import logging
 
 import Constants
-from natural_lang.tree import Tree
+from natural_lang.tree import *
 from utils.io import deserialize_from_file
 from lang.action import *
 from lang.parse import *
@@ -112,40 +112,8 @@ class Dataset(data.Dataset):
 
     def read_query_trees(self, filename):
         with open(filename, 'r') as f:
-            trees = [self.read_query_tree(line) for line in tqdm(f.readlines())]
+            trees = list(map(read_tree, tqdm(f.readlines())))
         return trees
-
-    def read_query_tree(self, line):
-        parents = list(map(int, line.split()))
-        trees = dict()
-        root = None
-        d = []
-        for i in range(1, len(parents)+1):
-            if i-1 not in trees.keys() and parents[i-1] != -1:
-                idx = i
-                prev = None
-                while True:
-                    parent = parents[idx-1]
-                    if parent == -1:
-                        break
-                    tree = Tree()
-                    d.append(tree)
-                    if prev is not None:
-                        tree.add_child(prev)
-                    trees[idx-1] = tree
-                    tree.idx = idx-1
-                    if parent-1 in trees.keys():
-                        trees[parent-1].add_child(tree)
-                        break
-                    elif parent == 0:
-                        root = tree
-                        break
-                    else:
-                        prev = tree
-                        idx = parent
-        if root is not None:
-            root._data = d
-        return root
 
     def load_output(self, data_dir, file_name):
         logging.info('Reading code files...')

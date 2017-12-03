@@ -48,7 +48,7 @@ class ChildSumTreeLSTM(nn.Module):
 
         c = torch.mul(i, u) + torch.sum(fc, dim=0, keepdim=True)
         h = torch.mul(o, F.tanh(c))
-        return c, h #self.dropout(h)
+        return c, h
 
     def forward_inner(self, tree, inputs):
         _ = [self.forward_inner(tree.children[idx], inputs) for idx in range(tree.num_children)]
@@ -74,7 +74,6 @@ class EncoderLSTMWrapper(nn.Module):
         super().__init__()
 
         self.config = config
-        self.is_cuda = self.config.cuda
 
         if self.config.encoder == 'recursive-lstm':
             self.encoder = ChildSumTreeLSTM(config.word_embed_dim, config.encoder_hidden_dim, config.dropout)
@@ -141,7 +140,7 @@ class EncoderLSTMWrapper(nn.Module):
             ctx.append(ctx1)
 
         # all ctx must be one length to be stacked
-        ctx = add_padding_and_stack(ctx, self.is_cuda)
+        ctx = add_padding_and_stack(ctx, inputs.is_cuda)
         h = torch.stack(h)
         c = torch.stack(h)
 
