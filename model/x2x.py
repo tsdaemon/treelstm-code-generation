@@ -443,19 +443,15 @@ class Tree2TreeModel(nn.Module):
 
         # (batch_size, max_example_action_num, rule_num)
         rule_predict = self.rule_gen_softmax.forward_train(decoder_hidden_state_trans_rule)
-        # assert rule_predict.max() < 0, "Log softmax can not be greater then zero"
 
         # (batch_size, max_example_action_num, 2)
         terminal_gen_action_prob = self.terminal_gen_softmax.forward_train(decoder_hidden_states)
-        # assert terminal_gen_action_prob.max() < 0, "Log softmax can not be greater then zero"
 
         # (batch_size, max_example_action_num, target_vocab_size)
         vocab_predict = self.vocab_gen_softmax.forward_train(decoder_hidden_state_trans_token)
-        # assert vocab_predict.max() < 0, "Log softmax can not be greater then zero"
 
         # (batch_size, max_example_action_num, max_query_length)
         copy_prob = self.src_ptr_net.forward_train(ctx, decoder_concat)
-        # assert copy_prob.max() < 0, "Log softmax can not be greater then zero"
 
         # (batch_size, max_example_action_num)
         rule_tgt_prob = rule_predict.gather(2, Var(tgt_action_seq[:, :, 0].unsqueeze(2), requires_grad=False)).squeeze(2)
@@ -472,9 +468,6 @@ class Tree2TreeModel(nn.Module):
         tgt_prob = tgt_action_seq_type[:, :, 0] * rule_tgt_prob + \
                    tgt_action_seq_type[:, :, 1] * (terminal_gen_action_prob[:, :, 0] + vocab_tgt_prob) + \
                    tgt_action_seq_type[:, :, 2] * (terminal_gen_action_prob[:, :, 1] + copy_tgt_prob)
-        # assert tgt_prob.max() <= 0, "Log softmax can not be greater then zero. " \
-        #                             "Zero values is possible for sequences shorter " \
-        #                             "than max sequence length."
 
         # nll loss
         loss = torch.neg(torch.sum(tgt_prob))
