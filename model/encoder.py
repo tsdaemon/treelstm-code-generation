@@ -29,6 +29,9 @@ class ChildSumTreeLSTM(nn.Module):
 
         self.fb = nn.Parameter(torch.FloatTensor(self.mem_dim).fill_(1.0))
 
+        # self.init_h = nn.Parameter(torch.FloatTensor(1, self.mem_dim).zero_())
+        # self.init_c = nn.Parameter(torch.FloatTensor(1, self.mem_dim).zero_())
+
         self.dropout = nn.AlphaDropout(p=p_dropout)
 
     def node_forward(self, inputs, child_c, child_h):
@@ -54,6 +57,8 @@ class ChildSumTreeLSTM(nn.Module):
         _ = [self.forward_inner(tree.children[idx], inputs) for idx in range(tree.num_children)]
 
         if tree.num_children == 0:
+            # child_c = self.init_c
+            # child_h = self.init_h
             child_c = Var(inputs[0].data.new(1, self.mem_dim).fill_(0.))
             child_h = Var(inputs[0].data.new(1, self.mem_dim).fill_(0.))
         else:
@@ -83,8 +88,8 @@ class EncoderLSTMWrapper(nn.Module):
             self.encoder = nn.LSTM(config.word_embed_dim, hidden_dim, 1, batch_first=True, dropout=config.dropout, bidirectional=True)
             self.init_bilstm(hidden_dim)
 
-            self.h0 = nn.Parameter(torch.FloatTensor(2, 1, hidden_dim).zero_())
-            self.c0 = nn.Parameter(torch.FloatTensor(2, 1, hidden_dim).zero_())
+            self.init_h = nn.Parameter(torch.FloatTensor(2, 1, hidden_dim).zero_())
+            self.init_c = nn.Parameter(torch.FloatTensor(2, 1, hidden_dim).zero_())
         else:
             raise Exception("Unknown encoder type!")
 
@@ -114,8 +119,8 @@ class EncoderLSTMWrapper(nn.Module):
 
     def forward_lstm(self, inputs):
         # (1, batch_size, encoder_hidden_dim)
-        h0 = self.h0.repeat(1, inputs.data.shape[0], 1)
-        c0 = self.c0.repeat(1, inputs.data.shape[0], 1)
+        h0 = self.init_h.repeat(1, inputs.data.shape[0], 1)
+        c0 = self.init_c.repeat(1, inputs.data.shape[0], 1)
         ctx, hc = self.encoder(inputs, (h0, c0))
         assert ctx.data.shape[0] == inputs.data.shape[0]
         assert ctx.data.shape[2] == self.config.encoder_hidden_dim

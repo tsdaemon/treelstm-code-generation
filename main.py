@@ -70,7 +70,7 @@ if __name__ == '__main__':
             model = model.cuda()
 
     # create learner
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad], lr=args.lr)
     trainer = Trainer(model, args, optimizer)
 
     # trainer.report_bot(0, 0, 0, 0)

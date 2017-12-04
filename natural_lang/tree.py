@@ -87,12 +87,14 @@ class Tree(object):
             rels = []
 
         for ch in self.children:
-            rels.append((self.idx, ch.idx))
+            n1 = '(' + str(self.idx) + ') ' + self.label
+            n2 = '(' + str(ch.idx) + ') ' + ch.label
+            rels.append((n1, n2))
             ch.get_relations(rels)
 
         return rels
 
-    def plot(self, tokens, categories):
+    def plot(self):
         G = nx.DiGraph()
         G.add_edges_from(self.get_relations())
         p = nx.drawing.nx_pydot.to_pydot(G)

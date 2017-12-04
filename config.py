@@ -23,6 +23,12 @@ parser.add_argument('-dropout', default=0.2, type=float)
 # encoder
 parser.add_argument('-encoder', default='recursive-lstm', choices=['recursive-lstm', 'bi-lstm'])
 parser.add_argument('-syntax', default='ccg', choices=['ccg', 'pcfg', 'dependency'])
+parser.add_argument('-pretrained_embeds', dest='pretrained_embeds', action='store_true')
+parser.add_argument('-no_pretrained_embeds', dest='pretrained_embeds', action='store_false')
+parser.set_defaults(pretrained_embeds=True)
+parser.add_argument('-freeze_embeds', dest='freeze_embeds', action='store_true')
+parser.add_argument('-no_freeze_embeds', dest='freeze_embeds', action='store_false')
+parser.set_defaults(freeze_embeds=False)
 
 # decoder
 parser.add_argument('-parent_hidden_state_feed', dest='parent_hidden_state_feed', action='store_true')
@@ -44,6 +50,11 @@ parser.set_defaults(tree_attention=False)
 parser.add_argument('-enable_copy', dest='enable_copy', action='store_true')
 parser.add_argument('-no_copy', dest='enable_copy', action='store_false')
 parser.set_defaults(enable_copy=True)
+
+# x2x
+parser.add_argument('-thought_vector', dest='thought_vector', action='store_true')
+parser.add_argument('-no_thought_vector', dest='thought_vector', action='store_false')
+parser.set_defaults(thought_vector=True)
 
 # training
 parser.add_argument('-clip_grad', default=0., type=float)

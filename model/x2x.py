@@ -22,7 +22,12 @@ class Tree2TreeModel(nn.Module):
         self.grammar = grammar
 
         self.word_embedding = nn.Embedding(word_embeds.shape[0], config.word_embed_dim, padding_idx=Constants.PAD)
-        self.word_embedding.weight.data.copy_(word_embeds)
+        if config.pretrained_embeds:
+            self.word_embedding.weight.data.copy_(word_embeds)
+        else:
+            init.normal(self.word_embedding.weight, 0.0, 0.2)
+        if config.freeze_embeds:
+            self.word_embedding.weight.requires_grad = False
 
         self.encoder = EncoderLSTMWrapper(config)
 
@@ -59,6 +64,9 @@ class Tree2TreeModel(nn.Module):
         init.xavier_uniform(self.decoder_hidden_state_W_token.weight)
         self.decoder_hidden_state_W_token.bias = parameter_init_zero(config.rule_embed_dim)
 
+        # self.init_h = nn.Parameter(torch.FloatTensor(self.config.decoder_hidden_dim).zero_())
+        # self.init_c = nn.Parameter(torch.FloatTensor(self.config.decoder_hidden_dim).zero_())
+
         self.log_softmax = nn.LogSoftmax(dim=-1)
         self.softmax = nn.Softmax(dim=-1)
 
@@ -83,9 +91,9 @@ class Tree2TreeModel(nn.Module):
         live_hyp_num = 1
 
         root_hyp = Hyp(self.grammar)
-        root_hyp.state = h
-        root_hyp.cell = c
-        root_hyp.action_embed = Var(zeros(self.config.rule_embed_dim, cuda=h.is_cuda), requires_grad=False)
+        root_hyp.state = h  # if self.config.thought_vector else self.init_h
+        root_hyp.cell = c  # if self.config.thought_vector else self.init_c
+        root_hyp.action_embed = Var(zeros(self.config.rule_embed_dim, cuda=h.is_cuda))
         root_hyp.node_id = self.grammar.get_node_type_id(root_hyp.tree.type)
         root_hyp.parent_rule_id = -1
 
@@ -417,6 +425,9 @@ class Tree2TreeModel(nn.Module):
         # (batch_size, max_example_action_num, rule_embed_dim)
         tgt_action_seq_embed_tm1 = Var(zeros_like(tgt_action_seq_embed, h.is_cuda))
         tgt_action_seq_embed_tm1[:, 1:, :] = tgt_action_seq_embed[:, :-1, :]
+
+        # h = h if self.config.thought_vector else self.init_h
+        # c = c if self.config.thought_vector else self.init_c
 
         # (batch_size, max_example_action_num, rule_embed_dim + node_embed_dim + rule_embed_dim)
         decoder_input = torch.cat([tgt_action_seq_embed_tm1, tgt_node_embed, tgt_par_rule_embed], dim=-1)
