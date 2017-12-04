@@ -28,7 +28,7 @@ class ChildSumTreeLSTM(nn.Module):
         init.orthogonal(self.fh.weight)
 
         self.fb = nn.Parameter(torch.FloatTensor(self.mem_dim).fill_(1.0))
-
+        #
         # self.init_h = nn.Parameter(torch.FloatTensor(1, self.mem_dim).zero_())
         # self.init_c = nn.Parameter(torch.FloatTensor(1, self.mem_dim).zero_())
 

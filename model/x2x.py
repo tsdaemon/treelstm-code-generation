@@ -93,7 +93,7 @@ class Tree2TreeModel(nn.Module):
         root_hyp = Hyp(self.grammar)
         root_hyp.state = h  # if self.config.thought_vector else self.init_h
         root_hyp.cell = c  # if self.config.thought_vector else self.init_c
-        root_hyp.action_embed = Var(zeros(self.config.rule_embed_dim, cuda=h.is_cuda))
+        root_hyp.action_embed = Var(zeros(self.config.rule_embed_dim, cuda=h.is_cuda), requires_grad=False)
         root_hyp.node_id = self.grammar.get_node_type_id(root_hyp.tree.type)
         root_hyp.parent_rule_id = -1
 
