@@ -41,6 +41,13 @@ def zeros(*shape, cuda=False):
     return t
 
 
+def normal_var(*shape, cuda=False, scale=1.0):
+    t = torch.FloatTensor(*shape).normal_(0.0, scale)
+    if cuda:
+        t = t.cuda()
+    return Var(t, requires_grad=False)
+
+
 def zeros_like(tensor, cuda):
     if hasattr(tensor, "backward"):
         shape = tensor.data.shape

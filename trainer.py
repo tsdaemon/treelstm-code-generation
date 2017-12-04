@@ -127,7 +127,6 @@ class Trainer(object):
 
     def validate(self, dataset, epoch, out_dir):
         self.model.eval()
-        #self.model.before_eval()
         cum_bleu, cum_acc, cum_oracle_bleu, cum_oracle_acc = 0.0, 0.0, 0.0, 0.0
         errors = 0
         # all_references, all_predictions = [], []
@@ -160,7 +159,6 @@ class Trainer(object):
 
             # all_references.append([refer_tokens_for_bleu])
             # all_predictions.append(pred_tokens_for_bleu)
-        #self.model.after_eval()
 
         cum_bleu /= len(dataset)
         cum_acc /= len(dataset)
