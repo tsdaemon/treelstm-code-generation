@@ -144,7 +144,7 @@ class ChildSumTreeLSTM(nn.Module):
         self.fh = nn.Linear(self.mem_dim, self.mem_dim, bias=False)
         init.orthogonal(self.fh.weight)
 
-    def node_forward(self, inputs, child_c, child_h, dr_X, dr_H):
+    def node_forward(self, xi, xf, xo, xu, child_c, child_h, dr_H):
         child_h_sum = torch.sum(child_h, dim=0, keepdim=True)
 
         # iou = self.ioux(inputs) + self.iouh(child_h_sum)
@@ -152,9 +152,13 @@ class ChildSumTreeLSTM(nn.Module):
         # i, o, u = torch.split(iou, iou.size(1) // 3, dim=1)
         # i, o, u = F.sigmoid(i), F.sigmoid(o), F.tanh(u)
 
+        i = xi + self.ih(child_h_sum * dr_H[0])
+        o = xo + self.oh(child_h_sum * dr_H[1])
+        u = xu + self.uh(child_h_sum * dr_H[2])
+
         f = F.sigmoid(
-            self.fh(child_h) +
-            self.fx(inputs).repeat(len(child_h), 1) +
+            self.fh(child_h * dr_H[3].unsqueeze(0)) +
+            xf.repeat(len(child_h), 1) +
             self.fb
         )
         fc = torch.mul(f, child_c)
@@ -163,26 +167,36 @@ class ChildSumTreeLSTM(nn.Module):
         h = torch.mul(o, F.tanh(c))
         return c, h
 
-    def forward_inner(self, tree, inputs, dr_X, dr_H):
-        _ = [self.forward_inner(tree.children[idx], inputs) for idx in range(tree.num_children)]
+    def forward_inner(self, tree, Xi, Xf, Xu, Xo, dr_H):
+        _ = [self.forward_inner(tree.children[idx], Xi, Xf, Xu, Xo, dr_H) for idx in range(tree.num_children)]
 
         if tree.num_children == 0:
-            child_c = Var(inputs[0].data.new(1, self.mem_dim).fill_(0.))
-            child_h = Var(inputs[0].data.new(1, self.mem_dim).fill_(0.))
+            # child_c = Var(Xi[0].data.new(1, self.mem_dim).fill_(0.))
+            # child_h = Var(inputs[0].data.new(1, self.mem_dim).fill_(0.))
+            child_c = normal_var(self.mem_dim, cuda=Xi.is_cuda, scale=0.1)
+            child_h = normal_var(self.mem_dim, cuda=Xi.is_cuda, scale=0.1)
         else:
             child_c, child_h = zip(*map(lambda x: x.state, tree.children))
             child_c, child_h = torch.cat(child_c, dim=0), torch.cat(child_h, dim=0)
 
-        tree.state = self.node_forward(inputs[tree.idx], child_c, child_h, dr_X, dr_H)
+        xi, xf, xo, xu = Xi[tree.idx, :].squeeze(0), \
+                         Xf[tree.idx, :].squeeze(0), \
+                         Xo[tree.idx, :].squeeze(0), \
+                         Xu[tree.idx, :].squeeze(0)
+
+        tree.state = self.node_forward(xi, xf, xo, xu, child_c, child_h, dr_H)
         return tree.state
 
     def forward(self, tree, X):
-        dr_X = dropout_matrix(4, self.in_dim, train=self.training, cuda=inputs.is_cuda, p=self.dropout)
-        dr_H = dropout_matrix(4, self.mem_dim, train=self.training, cuda=inputs.is_cuda, p=self.dropout)
+        dr_X = dropout_matrix(4, 1, self.in_dim, train=self.training, cuda=X.is_cuda, p=self.dropout)
+        dr_H = dropout_matrix(4, self.mem_dim, train=self.training, cuda=X.is_cuda, p=self.dropout)
 
-        
+        Xi = self.ix(X * dr_X[0])
+        Xf = self.fx(X * dr_X[1])
+        Xu = self.ux(X * dr_X[2])
+        Xo = self.ox(X * dr_X[3])
 
-        self.forward_inner(tree, inputs, dr_X, dr_H)
+        self.forward_inner(tree, Xi, Xf, Xu, Xo, dr_H)
         return tree.state[1].squeeze(), tree.state[0].squeeze(), torch.stack([t.state[1] for t in tree.data()]).squeeze()
 
 
