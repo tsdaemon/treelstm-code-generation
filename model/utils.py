@@ -79,7 +79,7 @@ def parameter_init_zero(*dims):
 
 
 def dropout_matrix(*dims, p=0.2, train=True, cuda=False):
-    assert p < 1.0 and p > 0.0, "Invalid probability: {}".format(p)
+    assert p <= 1.0 and p >= 0.0, "Invalid probability: {}".format(p)
     prob = 1-p
     # all 0.8, ok for evaluation
     d = Var(torch.FloatTensor(*dims).fill_(prob))
