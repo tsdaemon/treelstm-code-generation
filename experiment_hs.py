@@ -58,10 +58,10 @@ if __name__ == '__main__':
     #                "-data_dir ./preprocessed/hs/no_unary_closures", shell=True)
 
     # encoder dropout
-    subprocess.run("python main.py -dataset hs -cuda -encoder bi-lstm-dropout "
-                   "-output_dir ./results/hs/no_thought/dropout/bilstm "
-                   "-train_patience 12 "
-                   "-data_dir ./preprocessed/hs/no_unary_closures", shell=True)
+    # subprocess.run("python main.py -dataset hs -cuda -encoder bi-lstm-dropout "
+    #                "-output_dir ./results/hs/no_thought/dropout/bilstm "
+    #                "-train_patience 12 "
+    #                "-data_dir ./preprocessed/hs/no_unary_closures", shell=True)
 
     subprocess.run("python main.py -dataset hs -cuda -syntax dependency "
                    "-output_dir ./results/hs/no_unary_closures/dropout/dependency "
