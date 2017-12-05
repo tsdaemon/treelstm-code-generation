@@ -18,7 +18,7 @@ parser.add_argument('-encoder_hidden_dim', default=256, type=int)
 parser.add_argument('-decoder_hidden_dim', default=256, type=int)
 parser.add_argument('-attention_hidden_dim', default=50, type=int)
 parser.add_argument('-ptrnet_hidden_dim', default=50, type=int)
-parser.add_argument('-dropout', default=0.2, type=float)
+
 
 # encoder
 parser.add_argument('-encoder', default='recursive-lstm', choices=['recursive-lstm', 'bi-lstm', 'bi-lstm-dropout'])
@@ -29,6 +29,7 @@ parser.set_defaults(pretrained_embeds=True)
 parser.add_argument('-freeze_embeds', dest='freeze_embeds', action='store_true')
 parser.add_argument('-no_freeze_embeds', dest='freeze_embeds', action='store_false')
 parser.set_defaults(freeze_embeds=False)
+parser.add_argument('-encoder_dropout', default=0.1, type=float)
 
 # decoder
 parser.add_argument('-parent_hidden_state_feed', dest='parent_hidden_state_feed', action='store_true')
@@ -50,6 +51,8 @@ parser.set_defaults(tree_attention=False)
 parser.add_argument('-enable_copy', dest='enable_copy', action='store_true')
 parser.add_argument('-no_copy', dest='enable_copy', action='store_false')
 parser.set_defaults(enable_copy=True)
+
+parser.add_argument('-decoder_dropout', default=0.2, type=float)
 
 # x2x
 parser.add_argument('-thought_vector', dest='thought_vector', action='store_true')

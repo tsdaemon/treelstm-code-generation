@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     # encoder dropout
     # subprocess.run("python main.py -dataset hs -cuda -encoder bi-lstm-dropout "
-    #                "-output_dir ./results/hs/no_thought/dropout/bilstm "
+    #                "-output_dir ./results/hs/no_unary_closures/dropout/bilstm "
     #                "-train_patience 12 "
     #                "-data_dir ./preprocessed/hs/no_unary_closures", shell=True)
 

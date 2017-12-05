@@ -207,11 +207,13 @@ class EncoderLSTMWrapper(nn.Module):
         self.config = config
 
         if self.config.encoder == 'recursive-lstm':
-            self.encoder = ChildSumTreeLSTM(config.word_embed_dim, config.encoder_hidden_dim, config.dropout)
+            self.encoder = ChildSumTreeLSTM(config.word_embed_dim, config.encoder_hidden_dim,
+                                            config.encoder_dropout)
         elif self.config.encoder == 'bi-lstm':
             hidden_dim = int(config.encoder_hidden_dim/2)
             # http://pytorch.org/docs/master/nn.html#torch.nn.LSTM
-            self.encoder = nn.LSTM(config.word_embed_dim, hidden_dim, 1, batch_first=True, dropout=config.dropout, bidirectional=True)
+            self.encoder = nn.LSTM(config.word_embed_dim, hidden_dim, 1, batch_first=True,
+                                   dropout=config.encoder_dropout, bidirectional=True)
             self.init_bilstm(hidden_dim)
 
             self.init_h = nn.Parameter(torch.FloatTensor(2, 1, hidden_dim).zero_())
@@ -219,7 +221,7 @@ class EncoderLSTMWrapper(nn.Module):
         elif self.config.encoder == 'bi-lstm-dropout':
             assert config.dropout > 0.0, "Custom LSTM implementation designed specially to use with " \
                                          "dropout. Use bi-lstm instead."
-            self.encoder = BiLSTM(config.word_embed_dim, config.encoder_hidden_dim, config.dropout)
+            self.encoder = BiLSTM(config.word_embed_dim, config.encoder_hidden_dim, config.encoder_dropout)
         else:
             raise Exception("Unknown encoder type!")
 

@@ -74,11 +74,10 @@ class CondAttLSTM(nn.Module):
         init.xavier_uniform(self.h_att.weight)
         self.h_att.bias = nn.Parameter(torch.FloatTensor(1).zero_())
 
-        # self.dropout = nn.AlphaDropout(p=config.dropout)
         self.softmax = nn.Softmax(dim=-1);
 
         self.parent_hidden_state_feed = config.parent_hidden_state_feed
-        self.dropout = config.dropout
+        self.dropout = config.decoder_dropout
         self.config = config
 
     def before_eval(self):
