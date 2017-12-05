@@ -133,13 +133,13 @@ class ChildSumTreeLSTM(nn.Module):
 
         # W_h
         self.ih = nn.Linear(self.mem_dim, self.mem_dim, bias=False)
-        init.xavier_uniform(self.ih.weight)
+        init.orthogonal(self.ih.weight)
 
         self.oh = nn.Linear(self.mem_dim, self.mem_dim, bias=False)
-        init.xavier_uniform(self.oh.weight)
+        init.orthogonal(self.oh.weight)
 
         self.uh = nn.Linear(self.mem_dim, self.mem_dim, bias=False)
-        init.xavier_uniform(self.uh.weight)
+        init.orthogonal(self.uh.weight)
 
         self.fh = nn.Linear(self.mem_dim, self.mem_dim, bias=False)
         init.orthogonal(self.fh.weight)

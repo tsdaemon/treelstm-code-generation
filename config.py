@@ -29,7 +29,7 @@ parser.set_defaults(pretrained_embeds=True)
 parser.add_argument('-freeze_embeds', dest='freeze_embeds', action='store_true')
 parser.add_argument('-no_freeze_embeds', dest='freeze_embeds', action='store_false')
 parser.set_defaults(freeze_embeds=False)
-parser.add_argument('-encoder_dropout', default=0.1, type=float)
+parser.add_argument('-encoder_dropout', default=0.2, type=float)
 
 # decoder
 parser.add_argument('-parent_hidden_state_feed', dest='parent_hidden_state_feed', action='store_true')
