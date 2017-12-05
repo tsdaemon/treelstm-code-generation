@@ -152,18 +152,18 @@ class ChildSumTreeLSTM(nn.Module):
         # i, o, u = torch.split(iou, iou.size(1) // 3, dim=1)
         # i, o, u = F.sigmoid(i), F.sigmoid(o), F.tanh(u)
 
-        i = xi + self.ih(child_h_sum * dr_H[0])
-        o = xo + self.oh(child_h_sum * dr_H[1])
-        u = xu + self.uh(child_h_sum * dr_H[2])
+        i = F.sigmoid(xi + self.ih(child_h_sum * dr_H[0]))
+        o = F.sigmoid(xo + self.oh(child_h_sum * dr_H[1]))
+        u = F.tanh(xu + self.uh(child_h_sum * dr_H[2]))
 
         f = F.sigmoid(
             self.fh(child_h * dr_H[3].unsqueeze(0)) +
             xf.repeat(len(child_h), 1) +
             self.fb
         )
-        fc = torch.mul(f, child_c)
+        fc = torch.sum(f * child_c, dim=0, keepdim=True)
 
-        c = torch.mul(i, u) + torch.sum(fc, dim=0, keepdim=True)
+        c = u * i + fc
         h = torch.mul(o, F.tanh(c))
         return c, h
 
