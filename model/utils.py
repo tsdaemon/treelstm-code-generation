@@ -98,4 +98,14 @@ def device_map_location(cuda):
         return lambda storage, loc: storage
 
 
+def reverse(tensor, dim=0):
+    length = tensor.size()[dim]
+    idx = Var(torch.arange(length-1, -1, -1).long())
+    if tensor.is_cuda:
+        idx = idx.cuda()
+
+    return torch.index_select(tensor, dim, idx)
+
+
+
 
