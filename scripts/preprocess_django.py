@@ -1,96 +1,39 @@
 import shutil
 import glob
 from functools import reduce
-import logging
 
 from scripts.preprocess_utils import *
 from lang.parse import *
 
 import Constants
 
-position_symbols = ["NAME_END",
-                    "ATK_END",
-                    "DEF_END",
-                    "COST_END",
-                    "DUR_END",
-                    "TYPE_END",
-                    "PLAYER_CLS_END",
-                    "RACE_END",
-                    "RARITY_END"]
-
-names = ['Name', 'attack', 'defence', 'cost', 'duration', 'type', 'player class', 'race', 'rarity']
-
-
-def extract_from_hs_line(line, end_symbol, start_pos=None):
-    if start_pos is None:
-        start_pos = 0
-
-    end_pos = line.find(" " + end_symbol)
-    result = line[start_pos:end_pos]
-    new_pos = end_pos + len(end_symbol) + 2
-    return result, new_pos
-
-
-def tranform_description(vars, desc):
-    vars_desc = map(lambda t: '{}: {}'.format(t[0], t[1]), zip(names, vars))
-    vars_line = reduce(lambda v1, v2: '{}, {}'.format(v1, v2), vars_desc) + "."
-
-    if desc == "NIL\n":
-        desc = vars_line + "\n"
-    else:
-        desc = vars_line + " " + desc
-    return re.sub(r"<[^>]*>", "", desc)
-
-
-def split_input(filepath):
-    logging.info('Splitting input ' + filepath)
-    dst_dir = os.path.dirname(filepath)
-    with open(filepath, 'r') as datafile, \
-         open(os.path.join(dst_dir, filepath + '.description'), 'w') as dfile:
-            for line in tqdm(datafile.readlines()):
-                vars = []
-                position = 0
-                for pos_sym in position_symbols:
-                    var, position = extract_from_hs_line(line, pos_sym, position)
-                    if var == "NIL":
-                        var = "None"
-                    vars.append(var)
-
-                description = tranform_description(vars, line[position:])
-                dfile.write(description)
-
-
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.DEBUG)
 
     logging.info('=' * 80)
-    logging.info('Pre-processing HearthStone dataset')
+    logging.info('Pre-processing Django dataset')
     logging.info('=' * 80)
 
-    hs_source_dir = os.path.join(data_dir, 'card2code/third_party/hearthstone/')
-    hs_dir = os.path.join(base_dir, 'preprocessed/hs/unary_closures')
+    dj_source_dir = os.path.join(data_dir, 'card2code/en-django/')
+    dj_dir = os.path.join(base_dir, 'preprocessed/django')
 
-    if os.path.exists(hs_dir):
-        shutil.rmtree(hs_dir)
-    os.makedirs(hs_dir)
+    if os.path.exists(dj_dir):
+        shutil.rmtree(dj_dir)
+    os.makedirs(dj_dir)
 
     # if not os.path.exists(hs_dir):
     #     os.makedirs(hs_dir)
     # else:
-    #     print("Hearthstone folder found. Exiting.")
+    #     print("Django folder found. Exiting.")
     #     exit(1)
 
-    train_dir = os.path.join(hs_dir, 'train')
-    dev_dir = os.path.join(hs_dir, 'dev')
-    test_dir = os.path.join(hs_dir, 'test')
+    train_dir = os.path.join(dj_dir, 'train')
+    dev_dir = os.path.join(dj_dir, 'dev')
+    test_dir = os.path.join(dj_dir, 'test')
     make_dirs([train_dir, dev_dir, test_dir])
 
-    shutil.copy(os.path.join(hs_source_dir, 'dev_hs.in'), os.path.join(dev_dir, 'dev.in'))
-    shutil.copy(os.path.join(hs_source_dir, 'dev_hs.out'), os.path.join(dev_dir, 'dev.out'))
-    shutil.copy(os.path.join(hs_source_dir, 'train_hs.in'), os.path.join(train_dir, 'train.in'))
-    shutil.copy(os.path.join(hs_source_dir, 'train_hs.out'), os.path.join(train_dir, 'train.out'))
-    shutil.copy(os.path.join(hs_source_dir, 'test_hs.in'), os.path.join(test_dir, 'test.in'))
-    shutil.copy(os.path.join(hs_source_dir, 'test_hs.out'), os.path.join(test_dir, 'test.out'))
+    shutil.copy(os.path.join(dj_source_dir, 'all.anno'), os.path.join(dj_dir, 'all.anno'))
+    shutil.copy(os.path.join(dj_source_dir, 'all.code'), os.path.join(dj_dir, 'all.code'))
 
     logging.info('Splitting dataset')
     split_input(os.path.join(dev_dir, 'dev.in'))

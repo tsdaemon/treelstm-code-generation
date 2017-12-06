@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
-python3 scripts/download.py
+python scripts/download.py
 
 sh build_java.sh
 
-python3 scripts/preprocess_hs.py
+python scripts/preprocess_hs.py
+python scripts/preprocess_django.py
