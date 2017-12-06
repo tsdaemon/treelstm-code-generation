@@ -420,8 +420,10 @@ class Tree2TreeModel(nn.Module):
         tgt_action_seq_embed_tm1 = Var(zeros_like(tgt_action_seq_embed, h.is_cuda))
         tgt_action_seq_embed_tm1[:, 1:, :] = tgt_action_seq_embed[:, :-1, :]
 
-        h = h if self.thought else normal_var(h.size()[0], self.config.decoder_hidden_dim, cuda=h.is_cuda, scale=0.1)
-        c = c if self.thought else normal_var(c.size()[0], self.config.decoder_hidden_dim, cuda=c.is_cuda, scale=0.1)
+        h = h if self.thought else init_var(h.size()[0], self.config.decoder_hidden_dim,
+                                            cuda=h.is_cuda, scale=0.1, training=self.training)
+        c = c if self.thought else init_var(c.size()[0], self.config.decoder_hidden_dim,
+                                            cuda=c.is_cuda, scale=0.1, training=self.training)
 
         # (batch_size, max_example_action_num, rule_embed_dim + node_embed_dim + rule_embed_dim)
         decoder_input = torch.cat([tgt_action_seq_embed_tm1, tgt_node_embed, tgt_par_rule_embed], dim=-1)

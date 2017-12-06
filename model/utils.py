@@ -41,11 +41,25 @@ def zeros(*shape, cuda=False):
     return t
 
 
+def zeros_var(*shape, cuda=False):
+    t = torch.FloatTensor(*shape).zero_()
+    if cuda:
+        t = t.cuda()
+    return Var(t, requires_grad=False)
+
+
 def normal_var(*shape, cuda=False, scale=1.0):
     t = torch.FloatTensor(*shape).normal_(0.0, scale)
     if cuda:
         t = t.cuda()
     return Var(t, requires_grad=False)
+
+
+def init_var(*shape, cuda=False, scale=1.0, training=True):
+    if training:
+        return normal_var(*shape, cuda=cuda, scale=scale)
+    else:
+        return zeros_var(*shape, cuda=cuda)
 
 
 def zeros_like(tensor, cuda):

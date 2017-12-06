@@ -60,8 +60,8 @@ class LSTM(nn.Module):
         Xc = self.W_c(X * dr_X[2])
         Xo = self.W_o(X * dr_X[3])
 
-        h = normal_var(batch_size, self.output_dim, scale=0.1, cuda=X.is_cuda)
-        c = normal_var(batch_size, self.output_dim, scale=0.1, cuda=X.is_cuda)
+        h = init_var(batch_size, self.output_dim, scale=0.1, cuda=X.is_cuda, training=self.training)
+        c = init_var(batch_size, self.output_dim, scale=0.1, cuda=X.is_cuda, training=self.training)
         h_hist = []
         c_hist = []
         for t in range(length):
@@ -106,13 +106,6 @@ class ChildSumTreeLSTM(nn.Module):
         self.in_dim = in_dim
         self.mem_dim = mem_dim
         self.dropout = p_dropout
-
-        # self.ioux = nn.Linear(self.in_dim, 3 * self.mem_dim)
-        # init.xavier_uniform(self.ioux.weight)
-        # self.ioux.bias = nn.Parameter(torch.FloatTensor(3 * self.mem_dim).zero_())
-
-        # self.iouh = nn.Linear(self.mem_dim, 3 * self.mem_dim, bias=False)
-        # init.orthogonal(self.iouh.weight)
 
         # W_x
         self.ix = nn.Linear(self.in_dim, self.mem_dim)
@@ -169,8 +162,8 @@ class ChildSumTreeLSTM(nn.Module):
 
         if tree.num_children == 0:
             # (1, mem_dim)
-            child_c = normal_var(1, self.mem_dim, cuda=Xi.is_cuda, scale=0.1)
-            child_h = normal_var(1, self.mem_dim, cuda=Xi.is_cuda, scale=0.1)
+            child_c = init_var(1, self.mem_dim, cuda=Xi.is_cuda, scale=0.1, training=self.training)
+            child_h = init_var(1, self.mem_dim, cuda=Xi.is_cuda, scale=0.1, training=self.training)
         else:
             # (k_children, mem_dim)
             child_c, child_h = zip(*map(lambda x: x.state, tree.children))
@@ -209,13 +202,12 @@ class EncoderLSTMWrapper(nn.Module):
                                             config.encoder_dropout)
         elif self.config.encoder == 'bi-lstm':
             hidden_dim = int(config.encoder_hidden_dim/2)
+            self.hidden_dim = hidden_dim
             # http://pytorch.org/docs/master/nn.html#torch.nn.LSTM
             self.encoder = nn.LSTM(config.word_embed_dim, hidden_dim, 1, batch_first=True,
                                    dropout=config.encoder_dropout, bidirectional=True)
             self.init_bilstm(hidden_dim)
 
-            self.init_h = nn.Parameter(torch.FloatTensor(2, 1, hidden_dim).zero_())
-            self.init_c = nn.Parameter(torch.FloatTensor(2, 1, hidden_dim).zero_())
         elif self.config.encoder == 'bi-lstm-dropout':
             assert config.encoder_dropout > 0.0, "Custom LSTM implementation designed specially to use with " \
                                          "dropout. Use bi-lstm instead."
@@ -250,9 +242,11 @@ class EncoderLSTMWrapper(nn.Module):
             return self.forward_lstm_dropout(inputs)
 
     def forward_lstm(self, inputs):
-        # (1, batch_size, encoder_hidden_dim)
-        h0 = self.init_h.repeat(1, inputs.data.shape[0], 1)
-        c0 = self.init_c.repeat(1, inputs.data.shape[0], 1)
+        # (2, batch_size, encoder_hidden_dim)
+        h0 = init_var(2, inputs.size[0], self.hidden_dim,
+                      cuda=inputs.is_cuda, scale=0.1, training=self.training)
+        c0 = init_var(2, inputs.size[0], self.hidden_dim,
+                      cuda=inputs.is_cuda, scale=0.1, training=self.training)
         ctx, hc = self.encoder(inputs, (h0, c0))
         assert ctx.data.shape[0] == inputs.data.shape[0]
         assert ctx.data.shape[2] == self.config.encoder_hidden_dim
