@@ -145,12 +145,8 @@ class ChildSumTreeLSTM(nn.Module):
         init.orthogonal(self.fh.weight)
 
     def node_forward(self, xi, xf, xo, xu, child_c, child_h, dr_H):
-        child_h_sum = torch.sum(child_h, dim=0)
-
-        # iou = self.ioux(inputs) + self.iouh(child_h_sum)
-        # # u is c tilda - the new value of memory cell
-        # i, o, u = torch.split(iou, iou.size(1) // 3, dim=1)
-        # i, o, u = F.sigmoid(i), F.sigmoid(o), F.tanh(u)
+        # (1, mem_dim)
+        child_h_sum = torch.sum(child_h, dim=0, keepdim=True)
 
         i = F.sigmoid(xi + self.ih(child_h_sum * dr_H[0]))
         o = F.sigmoid(xo + self.oh(child_h_sum * dr_H[1]))
@@ -161,7 +157,8 @@ class ChildSumTreeLSTM(nn.Module):
             xf.repeat(len(child_h), 1) +
             self.fb
         )
-        fc = torch.sum(f * child_c, dim=0)
+        # (1, mem_dim)
+        fc = torch.sum(f * child_c, dim=0, keepdim=True)
 
         c = u * i + fc
         h = torch.mul(o, F.tanh(c))
@@ -171,18 +168,19 @@ class ChildSumTreeLSTM(nn.Module):
         _ = [self.forward_inner(tree.children[idx], Xi, Xf, Xu, Xo, dr_H) for idx in range(tree.num_children)]
 
         if tree.num_children == 0:
-            # child_c = Var(Xi[0].data.new(1, self.mem_dim).fill_(0.))
-            # child_h = Var(inputs[0].data.new(1, self.mem_dim).fill_(0.))
+            # (1, mem_dim)
             child_c = normal_var(1, self.mem_dim, cuda=Xi.is_cuda, scale=0.1)
             child_h = normal_var(1, self.mem_dim, cuda=Xi.is_cuda, scale=0.1)
         else:
+            # (k_children, mem_dim)
             child_c, child_h = zip(*map(lambda x: x.state, tree.children))
             child_c, child_h = torch.cat(child_c, dim=0), torch.cat(child_h, dim=0)
 
-        xi, xf, xo, xu = Xi[tree.idx, :].squeeze(0), \
-                         Xf[tree.idx, :].squeeze(0), \
-                         Xo[tree.idx, :].squeeze(0), \
-                         Xu[tree.idx, :].squeeze(0)
+        # (1, mem_dim)
+        xi, xf, xo, xu = Xi[tree.idx, :], \
+                         Xf[tree.idx, :], \
+                         Xo[tree.idx, :], \
+                         Xu[tree.idx, :]
 
         tree.state = self.node_forward(xi, xf, xo, xu, child_c, child_h, dr_H)
         return tree.state
