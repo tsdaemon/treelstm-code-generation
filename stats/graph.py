@@ -9,17 +9,11 @@ def read_line_from_file(file, line):
         _ = [f.readline() for _ in range(line)]
         return f.readline()
 
-if __name__ == '__main__':
-    args = parser.parse_args()
-    hs_tree_path = os.path.join(args.data_dir, 'test/test.in.ccg_parents')
-    hs_category_path = os.path.join(args.data_dir, 'test/test.in.ccg_categories')
-    hs_tokens_path = os.path.join(args.data_dir, 'test/test.in.tokens')
 
-    line = 2
-
-    hs_tree_line = read_line_from_file(hs_tree_path, line)
-    hs_tokens = read_line_from_file(hs_tokens_path, line).split()
-    hs_categories = read_line_from_file(hs_category_path, line).split()
+def draw_tree(parents_path, cat_path, token_path, line, out_path):
+    hs_tree_line = read_line_from_file(parents_path, line)
+    hs_tokens = read_line_from_file(token_path, line).split()
+    hs_categories = read_line_from_file(cat_path, line).split()
 
     hs_labels = []
     for i in range(len(hs_categories)):
@@ -29,5 +23,30 @@ if __name__ == '__main__':
         hs_labels.append(label)
 
     hs_tree = read_tree(hs_tree_line, hs_labels)
-    hs_tree.plot()
+    hs_tree.savefig(out_path)
+
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    hs_tree_path = os.path.join(args.data_dir, 'dev/dev.in.constituency_parents')
+    hs_category_path = os.path.join(args.data_dir, 'dev/dev.in.constituency_categories')
+    hs_tokens_path = os.path.join(args.data_dir, 'dev/dev.in.tokens')
+    out_path = os.path.join(args.data_dir, 'dev/pcfg_tree_example.png')
+    line = 2
+
+    draw_tree(hs_tree_path, hs_category_path, hs_tokens_path, line, out_path)
+
+    hs_tree_path = os.path.join(args.data_dir, 'dev/dev.in.dependency_parents')
+    hs_category_path = os.path.join(args.data_dir, 'dev/dev.in.dependency_rels')
+    out_path = os.path.join(args.data_dir, 'dev/dependency_tree_example.png')
+
+    draw_tree(hs_tree_path, hs_category_path, hs_tokens_path, line, out_path)
+
+    hs_tree_path = os.path.join(args.data_dir, 'dev/dev.in.ccg_parents')
+    hs_category_path = os.path.join(args.data_dir, 'dev/dev.in.ccg_categories')
+    out_path = os.path.join(args.data_dir, 'dev/ccg_tree_example.png')
+
+    draw_tree(hs_tree_path, hs_category_path, hs_tokens_path, line, out_path)
+
+
 

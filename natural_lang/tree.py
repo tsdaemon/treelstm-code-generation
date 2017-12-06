@@ -94,8 +94,8 @@ class Tree(object):
 
         return rels
 
-    def plot(self):
+    def savefig(self, path):
         G = nx.DiGraph()
         G.add_edges_from(self.get_relations())
         p = nx.drawing.nx_pydot.to_pydot(G)
-        p.write_png('example.png')
+        p.write_png(path)

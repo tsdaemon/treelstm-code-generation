@@ -19,7 +19,6 @@ parser.add_argument('-decoder_hidden_dim', default=256, type=int)
 parser.add_argument('-attention_hidden_dim', default=50, type=int)
 parser.add_argument('-ptrnet_hidden_dim', default=50, type=int)
 
-
 # encoder
 parser.add_argument('-encoder', default='recursive-lstm', choices=['recursive-lstm', 'bi-lstm', 'bi-lstm-dropout'])
 parser.add_argument('-syntax', default='ccg', choices=['ccg', 'pcfg', 'dependency'])
