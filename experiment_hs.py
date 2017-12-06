@@ -65,18 +65,15 @@ if __name__ == '__main__':
 
     subprocess.run("python main.py -dataset hs -cuda -syntax dependency "
                    "-output_dir ./results/hs/no_unary_closures/dropout/dependency "
-                   "-train_patience 12 "
-                   "-encoder_dropout 0.0 "
+                   #"-encoder_dropout 0.0 "
                    "-data_dir ./preprocessed/hs/no_unary_closures", shell=True)
 
     subprocess.run("python main.py -dataset hs -cuda -syntax pcfg "
                    "-output_dir ./results/hs/no_unary_closures/dropout/pcfg "
-                   "-train_patience 12 "
-                   "-encoder_dropout 0.0 "
+                   # "-encoder_dropout 0.0 "
                    "-data_dir ./preprocessed/hs/no_unary_closures", shell=True)
 
     subprocess.run("python main.py -dataset hs -cuda -syntax ccg "
                    "-output_dir ./results/hs/no_unary_closures/dropout/ccg "
-                   "-train_patience 12 "
-                   "-encoder_dropout 0.0 "
+                   #"-encoder_dropout 0.0 "
                    "-data_dir ./preprocessed/hs/no_unary_closures", shell=True)
