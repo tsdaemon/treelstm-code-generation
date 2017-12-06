@@ -145,7 +145,7 @@ class ChildSumTreeLSTM(nn.Module):
         init.orthogonal(self.fh.weight)
 
     def node_forward(self, xi, xf, xo, xu, child_c, child_h, dr_H):
-        child_h_sum = torch.sum(child_h, dim=0, keepdim=True)
+        child_h_sum = torch.sum(child_h, dim=0)
 
         # iou = self.ioux(inputs) + self.iouh(child_h_sum)
         # # u is c tilda - the new value of memory cell
@@ -161,7 +161,7 @@ class ChildSumTreeLSTM(nn.Module):
             xf.repeat(len(child_h), 1) +
             self.fb
         )
-        fc = torch.sum(f * child_c, dim=0, keepdim=True)
+        fc = torch.sum(f * child_c, dim=0)
 
         c = u * i + fc
         h = torch.mul(o, F.tanh(c))
@@ -173,8 +173,8 @@ class ChildSumTreeLSTM(nn.Module):
         if tree.num_children == 0:
             # child_c = Var(Xi[0].data.new(1, self.mem_dim).fill_(0.))
             # child_h = Var(inputs[0].data.new(1, self.mem_dim).fill_(0.))
-            child_c = normal_var(self.mem_dim, cuda=Xi.is_cuda, scale=0.1)
-            child_h = normal_var(self.mem_dim, cuda=Xi.is_cuda, scale=0.1)
+            child_c = normal_var(1, self.mem_dim, cuda=Xi.is_cuda, scale=0.1)
+            child_h = normal_var(1, self.mem_dim, cuda=Xi.is_cuda, scale=0.1)
         else:
             child_c, child_h = zip(*map(lambda x: x.state, tree.children))
             child_c, child_h = torch.cat(child_c, dim=0), torch.cat(child_h, dim=0)
