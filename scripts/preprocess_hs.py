@@ -1,12 +1,11 @@
 import shutil
 import glob
 from functools import reduce
-import logging
 
 from scripts.preprocess_utils import *
 from lang.parse import *
-
 import Constants
+from config import parser
 
 position_symbols = ["NAME_END",
                     "ATK_END",
@@ -61,14 +60,15 @@ def split_input(filepath):
 
 
 if __name__ == '__main__':
+    args = parser.parse_args()
     logging.getLogger().setLevel(logging.DEBUG)
 
     logging.info('=' * 80)
     logging.info('Pre-processing HearthStone dataset')
     logging.info('=' * 80)
 
-    hs_source_dir = os.path.join(data_dir, 'card2code/third_party/hearthstone/')
-    hs_dir = os.path.join(base_dir, 'preprocessed/hs/unary_closures')
+    hs_source_dir = './data/card2code/third_party/hearthstone/'
+    hs_dir = args.data_dir
 
     if os.path.exists(hs_dir):
         shutil.rmtree(hs_dir)

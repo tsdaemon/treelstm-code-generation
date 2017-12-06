@@ -5,6 +5,7 @@ import zipfile
 import tarfile
 import requests
 
+
 def download(url, dirpath):
     filename = url.split('/')[-1]
     filepath = os.path.join(dirpath, filename)
@@ -31,6 +32,7 @@ def download(url, dirpath):
     f.close()
     return filepath
 
+
 def unzip(filepath):
     print("Extracting: " + filepath)
     dirpath = os.path.dirname(filepath)
@@ -38,12 +40,14 @@ def unzip(filepath):
         zf.extractall(dirpath)
     os.remove(filepath)
 
+
 def untargz(filepath):
     print("Extracting: " + filepath)
     dirpath = os.path.dirname(filepath)
     with tarfile.open(filepath, "r:gz") as tf:
         tf.extractall(dirpath)
     os.remove(filepath)
+
 
 def download_tagger(dirpath):
     tagger_dir = 'stanford-tagger'
@@ -57,6 +61,7 @@ def download_tagger(dirpath):
         zf.extractall(dirpath)
     os.remove(filepath)
     os.rename(os.path.join(dirpath, zip_dir), os.path.join(dirpath, tagger_dir))
+
 
 def download_easyccg(dirpath):
     dir = 'easyccg'
@@ -88,6 +93,7 @@ def download_parser(dirpath):
     os.remove(filepath)
     os.rename(os.path.join(dirpath, zip_dir), os.path.join(dirpath, parser_dir))
 
+
 def download_wordvecs(dirpath):
     if os.path.exists(dirpath):
         print('Found Glove vectors - skip')
@@ -96,6 +102,7 @@ def download_wordvecs(dirpath):
         os.makedirs(dirpath)
     url = 'http://nlp.stanford.edu/data/glove.840B.300d.zip'
     unzip(download(url, dirpath))
+
 
 def download_django(dirpath):
     if os.path.exists(dirpath + '/en-django'):
@@ -106,6 +113,7 @@ def download_django(dirpath):
     filename = download(url, dirpath)
     untargz(filename)
 
+
 def download_bs(dirname):
     if os.path.exists(dirname):
         print('Found BS dataset - skip')
@@ -113,6 +121,7 @@ def download_bs(dirname):
 
     cmd = ('git clone https://github.com/EdinburghNLP/code-docstring-corpus %s' % dirname)
     os.system(cmd)
+
 
 def download_hs(dirname):
     if os.path.exists(dirname):
