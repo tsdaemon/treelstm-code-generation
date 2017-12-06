@@ -77,8 +77,10 @@ class Tree2TreeModel(nn.Module):
         # (decoder_hidden_dim)
         h = h.squeeze(0)
         c = c.squeeze(0)
-        h = h if self.thought else normal_var(self.config.decoder_hidden_dim, cuda=h.is_cuda, scale=0.1)
-        c = c if self.thought else normal_var(self.config.decoder_hidden_dim, cuda=c.is_cuda, scale=0.1)
+        h = h if self.thought else init_var(self.config.decoder_hidden_dim,
+                                            cuda=h.is_cuda, scale=0.1, training=self.training)
+        c = c if self.thought else init_var(self.config.decoder_hidden_dim,
+                                            cuda=c.is_cuda, scale=0.1, training=self.training)
 
         completed_hyps = []
         completed_hyp_num = 0
