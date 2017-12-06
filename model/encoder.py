@@ -219,7 +219,7 @@ class EncoderLSTMWrapper(nn.Module):
             self.init_h = nn.Parameter(torch.FloatTensor(2, 1, hidden_dim).zero_())
             self.init_c = nn.Parameter(torch.FloatTensor(2, 1, hidden_dim).zero_())
         elif self.config.encoder == 'bi-lstm-dropout':
-            assert config.dropout > 0.0, "Custom LSTM implementation designed specially to use with " \
+            assert config.encoder_dropout > 0.0, "Custom LSTM implementation designed specially to use with " \
                                          "dropout. Use bi-lstm instead."
             self.encoder = BiLSTM(config.word_embed_dim, config.encoder_hidden_dim, config.encoder_dropout)
         else:
