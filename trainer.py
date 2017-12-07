@@ -146,12 +146,16 @@ class Trainer(object):
                 except:
                     logging.debug("Exception in converting tree to code:"
                                   "id: {}, beam pos: {}".format(idx, cid))
-                    errors += 1
+                    if cid == 0:
+                        errors += 1
 
             bleu, oracle_bleu, acc, oracle_acc, \
             refer_tokens_for_bleu, pred_tokens_for_bleu = evaluate_decode_result(
                 (enc_tree, query, query_tokens, ref_code_tree, ref_code),
                 idx, candidats, out_dir, self.config.dataset)
+
+            if len(candidats) == 0:
+                errors += 1
 
             cum_bleu += bleu
             cum_oracle_bleu += oracle_bleu
@@ -164,7 +168,7 @@ class Trainer(object):
         cum_acc /= len(dataset)
         cum_oracle_bleu /= len(dataset)
         cum_oracle_acc /= len(dataset)
-        errors /= len(dataset)*self.config.beam_size
+        errors /= len(dataset)
 
         # logging.info('corpus level bleu: %f',
         #              corpus_bleu(all_references, all_predictions,
