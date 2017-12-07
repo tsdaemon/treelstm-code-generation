@@ -13,18 +13,21 @@ if __name__ == '__main__':
                    "-output_dir ./results/django/unary_closures/dependency "
                    "-batch_size 50 "
                    "-unary_closures "
+                   "-max_query_length 140 "
                    "-data_dir ./preprocessed/django", shell=True)
 
     subprocess.run("python main.py -dataset django -cuda -syntax pcfg "
                    "-output_dir ./results/django/unary_closures/pcfg "
                    "-batch_size 50 "
                    "-unary_closures "
+                   "-max_query_length 140 "
                    "-data_dir ./preprocessed/django", shell=True)
 
     subprocess.run("python main.py -dataset django -cuda -syntax ccg "
                    "-output_dir ./results/django/unary_closures/ccg "
                    "-batch_size 50 "
                    "-unary_closures "
+                   "-max_query_length 140 "
                    "-data_dir ./preprocessed/django", shell=True)
 
     # without unary closures
@@ -38,16 +41,19 @@ if __name__ == '__main__':
                    "-output_dir ./results/django/no_unary_closures/dependency "
                    "-batch_size 50 "
                    "-no_unary_closures "
+                   "-max_query_length 140 "
                    "-data_dir ./preprocessed/django", shell=True)
 
     subprocess.run("python main.py -dataset django -cuda -syntax pcfg "
                    "-output_dir ./results/django/no_unary_closures/pcfg "
                    "-batch_size 50 "
                    "-no_unary_closures "
+                   "-max_query_length 140 "
                    "-data_dir ./preprocessed/django", shell=True)
 
     subprocess.run("python main.py -dataset django -cuda -syntax ccg "
                    "-output_dir ./results/django/no_unary_closures/ccg "
                    "-batch_size 50 "
                    "-no_unary_closures "
+                   "-max_query_length 140 "
                    "-data_dir ./preprocessed/django", shell=True)
