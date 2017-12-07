@@ -177,14 +177,20 @@ public class CCGParse {
       String line = stdin.nextLine();
 
       if(line != null && !line.trim().isEmpty()) {
-        SyntaxTreeNode parse = parser.parse(supertaggingResults, line).get(0);
+        try {
+          SyntaxTreeNode parse = parser.parse(supertaggingResults, line).get(0);
 
-        // produce parent pointer representation
-        int[] parents = constTreeParents(parse);
-        String[] categories = constTreeCategories(parse);
+          // produce parent pointer representation
+          int[] parents = constTreeParents(parse);
+          String[] categories = constTreeCategories(parse);
 
-        printParents(parents, parentWriter);
-        printCategories(categories, categoryWriter);
+          printParents(parents, parentWriter);
+          printCategories(categories, categoryWriter);
+        }
+        catch (Exception e) {
+          parentWriter.write("\n");
+          categoryWriter.write("\n");
+        }
       } else {
         parentWriter.write("\n");
         categoryWriter.write("\n");

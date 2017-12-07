@@ -10,9 +10,9 @@ from config import parser
 
 
 def load_dataset(config, force_regenerate=False):
-    hs_dir = config.data_dir
+    dj_dir = config.data_dir
     logging.info('='*80)
-    logging.info('Loading datasets from folder ' + hs_dir)
+    logging.info('Loading datasets from folder ' + dj_dir)
     logging.info('='*80)
     train, test, dev = None, None, None
     prefix = config.syntax + '_'

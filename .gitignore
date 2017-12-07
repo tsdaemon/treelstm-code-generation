@@ -11,3 +11,4 @@ results/
 *.pem
 *.ppk
 *.prof
+push.sh
