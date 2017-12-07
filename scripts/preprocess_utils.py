@@ -73,9 +73,7 @@ def save_vocab(destination, vocab):
 
 def tokenize(filepath):
     logging.info('Tokenizing ' + filepath)
-    dirpath = os.path.dirname(filepath)
-    filepre = os.path.splitext(os.path.basename(filepath))[0]
-    tokpath = os.path.join(dirpath, filepre + '.tokens')
+    tokpath = filepath + '.tokens'
     cmd = ('java -cp %s Tokenize -tokpath %s < %s'
            % (classpath, tokpath, filepath))
     os.system(cmd)
