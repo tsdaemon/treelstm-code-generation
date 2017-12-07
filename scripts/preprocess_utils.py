@@ -153,15 +153,16 @@ def load_word_vectors(path):
     return vocab, vectors
 
 
-def parse_code_trees(code_file, code_out_file):
+def parse_code_trees(code_file, code_out_file, lb=None):
     logging.info('Parsing code trees from file {}'.format(code_file))
     parse_trees = []
     codes = []
-    rule_num = 0.
-    example_num = 0
     for line in tqdm(open(code_file).readlines()):
-        lb = 'В§' if system == 'w' else '§'
-        code = line.replace(lb, '\n').replace('    ', '\t')
+        line = line.strip().replace('    ', '\t')
+        if lb is not None:
+            line = line.replace(lb, '\n')
+        code = line.replace('    ', '\t')
+
         code = canonicalize_code(code)
         codes.append(code)
 
@@ -174,10 +175,6 @@ def parse_code_trees(code_file, code_out_file):
 
         if pred_code != ref_code:
             raise RuntimeError('code mismatch!')
-
-        rules, _ = p_tree.get_productions(include_value_node=False)
-        rule_num += len(rules)
-        example_num += 1
 
         parse_trees.append(p_tree)
 

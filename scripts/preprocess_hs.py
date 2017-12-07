@@ -128,9 +128,10 @@ if __name__ == '__main__':
     parse(os.path.join(test_dir, 'test.in.tokens'))
 
     logging.info('Parsing output code')
-    parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'), os.path.join(dev_dir, 'dev.out.bin'))
-    parse_trees_train = parse_code_trees(os.path.join(train_dir, 'train.out'), os.path.join(train_dir, 'train.out.bin'))
-    parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'), os.path.join(test_dir, 'test.out.bin'))
+    lb = 'В§' if system == 'w' else '§'
+    parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'), os.path.join(dev_dir, 'dev.out.bin'), lb)
+    parse_trees_train = parse_code_trees(os.path.join(train_dir, 'train.out'), os.path.join(train_dir, 'train.out.bin'), lb)
+    parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'), os.path.join(test_dir, 'test.out.bin'), lb)
     parse_trees = parse_trees_dev+parse_trees_train+parse_trees_test
 
     logging.info('Applying unary closures')

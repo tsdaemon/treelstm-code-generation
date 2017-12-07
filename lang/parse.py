@@ -49,9 +49,12 @@ def python_ast_to_parse_tree(node):
         if isinstance(field_value, ast.AST):
             child = ASTNode(field_type, field_name)
             child.add_child(python_ast_to_parse_tree(field_value))
-        elif type(field_value) is str or type(field_value) is int or \
-                        type(field_value) is float or type(field_value) is object or \
-                        type(field_value) is bool:
+        elif type(field_value) is str \
+                or type(field_value) is bytes \
+                or type(field_value) is int \
+                or type(field_value) is float \
+                or type(field_value) is object \
+                or type(field_value) is bool:
             # if field_type != type(field_value):
             #     print 'expect [%s] type, got [%s]' % (field_type, type(field_value))
             child = ASTNode(type(field_value), field_name, value=field_value)

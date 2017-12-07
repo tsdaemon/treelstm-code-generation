@@ -41,12 +41,6 @@ if __name__ == '__main__':
         shutil.rmtree(dj_dir)
     os.makedirs(dj_dir)
 
-    # if not os.path.exists(hs_dir):
-    #     os.makedirs(hs_dir)
-    # else:
-    #     print("Django folder found. Exiting.")
-    #     exit(1)
-
     train_dir = os.path.join(dj_dir, 'train')
     dev_dir = os.path.join(dj_dir, 'dev')
     test_dir = os.path.join(dj_dir, 'test')
@@ -83,27 +77,40 @@ if __name__ == '__main__':
             emb[vocab.getIndex(word)] = glove_emb[glove_vocab.getIndex(word)]
     torch.save(emb, emb_file)
 
-    # logging.info('Parsing descriptions trees')
-    # parse(os.path.join(dev_dir, 'dev.in.tokens'))
-    # parse(os.path.join(train_dir, 'train.in.tokens'))
-    # parse(os.path.join(test_dir, 'test.in.tokens'))
+    logging.info('Parsing descriptions trees')
+    parse(os.path.join(dev_dir, 'dev.in.tokens'))
+    parse(os.path.join(train_dir, 'train.in.tokens'))
+    parse(os.path.join(test_dir, 'test.in.tokens'))
 
-    # logging.info('Parsing output code')
-    # parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'), os.path.join(dev_dir, 'dev.out.bin'))
-    # parse_trees_train = parse_code_trees(os.path.join(train_dir, 'train.out'), os.path.join(train_dir, 'train.out.bin'))
-    # parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'), os.path.join(test_dir, 'test.out.bin'))
-    # parse_trees = parse_trees_dev+parse_trees_train+parse_trees_test
-    #
-    # logging.info('Applying unary closures')
-    # do_unary_closures(parse_trees, 30)
-    #
-    # logging.info('Saving trees')
-    # write_trees(parse_trees_dev, os.path.join(dev_dir, 'dev.out.trees'))
-    # write_trees(parse_trees_train, os.path.join(train_dir, 'train.out.trees'))
-    # write_trees(parse_trees_test, os.path.join(test_dir, 'test.out.trees'))
-    #
-    # logging.info('Creating grammar')
-    # grammar = write_grammar(parse_trees, os.path.join(hs_dir, 'grammar.txt'))
-    #
-    # logging.info('Creating terminal vocabulary')
-    # write_terminal_tokens_vocab(grammar, parse_trees, os.path.join(hs_dir, 'terminal_vocab.txt'), min_freq=3)
+    logging.info('Parsing output code')
+    parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'), os.path.join(dev_dir, 'dev.out.bin'))
+    parse_trees_train = parse_code_trees(os.path.join(train_dir, 'train.out'), os.path.join(train_dir, 'train.out.bin'))
+    parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'), os.path.join(test_dir, 'test.out.bin'))
+    parse_trees = parse_trees_dev+parse_trees_train+parse_trees_test
+
+    # without u c
+    logging.info('Saving trees')
+    write_trees(parse_trees_dev, os.path.join(dev_dir, 'dev.out.trees'))
+    write_trees(parse_trees_train, os.path.join(train_dir, 'train.out.trees'))
+    write_trees(parse_trees_test, os.path.join(test_dir, 'test.out.trees'))
+
+    logging.info('Creating grammar')
+    grammar = write_grammar(parse_trees, os.path.join(dj_dir, 'grammar.txt'))
+
+    logging.info('Creating terminal vocabulary')
+    write_terminal_tokens_vocab(grammar, parse_trees, os.path.join(dj_dir, 'terminal_vocab.txt'), min_freq=3)
+
+    # with u c
+    logging.info('Applying unary closures')
+    do_unary_closures(parse_trees, 50)
+
+    logging.info('Saving trees with unary closures')
+    write_trees(parse_trees_dev, os.path.join(dev_dir, 'dev.out.trees.uc'))
+    write_trees(parse_trees_train, os.path.join(train_dir, 'train.out.trees.uc'))
+    write_trees(parse_trees_test, os.path.join(test_dir, 'test.out.trees.uc'))
+
+    logging.info('Creating grammar')
+    grammar = write_grammar(parse_trees, os.path.join(dj_dir, 'grammar.txt.uc'))
+
+    logging.info('Creating terminal vocabulary')
+    write_terminal_tokens_vocab(grammar, parse_trees, os.path.join(dj_dir, 'terminal_vocab.txt.uc'), min_freq=3)
