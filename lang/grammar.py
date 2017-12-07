@@ -117,7 +117,13 @@ TERMINAL_AST_TYPES = {
 
 
 def is_builtin_type(x):
-    return x == str or x == int or x == float or x == bool or x == object or x == 'identifier'
+    return x == str or \
+           x == int or \
+           x == float or \
+           x == bool or \
+           x == bytes or \
+           x == object or \
+           x == 'identifier'
 
 
 def is_terminal_ast_type(x):
