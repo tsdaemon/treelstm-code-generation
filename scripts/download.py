@@ -140,8 +140,6 @@ if __name__ == '__main__':
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
     wordvec_dir = os.path.join(data_dir, 'glove')
-    if not os.path.exists(wordvec_dir):
-        os.makedirs(wordvec_dir)
 
     # libraries
     lib_dir = os.path.join(base_dir, 'lib')
