@@ -2,7 +2,8 @@
 set -e
 python scripts/download.py
 
-sh build_java.sh
+sudo sh build_java.sh
 
+export PYTHONPATH="$PYTHONPATH:."
 # python scripts/preprocess_hs.py
 python scripts/preprocess_django.py
