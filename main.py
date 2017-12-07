@@ -46,6 +46,8 @@ if __name__ == '__main__':
     load_dataset = None
     if args.dataset == 'hs':
         from datasets.hs import load_dataset
+    elif args.dataset == 'django':
+        from datasets.django import load_dataset
     else:
         raise Exception('Dataset {} is not prepared yet'.format(args.dataset))
     train_data, dev_data, test_data = load_dataset(args)

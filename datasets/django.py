@@ -10,28 +10,30 @@ from config import parser
 
 
 def load_dataset(config, force_regenerate=False):
-    dj_dir = config.data_dir
+    dj_dir = './preprocessed/django'
     logging.info('='*80)
     logging.info('Loading datasets from folder ' + dj_dir)
     logging.info('='*80)
     train, test, dev = None, None, None
     prefix = config.syntax + '_'
+    if config.unary_closures:
+        prefix += 'uc_'
 
-    train_dir = os.path.join(hs_dir, 'train')
+    train_dir = os.path.join(dj_dir, 'train')
     train_file = os.path.join(train_dir, prefix+'train.pth')
     if not force_regenerate and os.path.isfile(train_file):
         logging.info('Train dataset found, loading...')
         train = torch.load(train_file)
         train.config = config
 
-    test_dir = os.path.join(hs_dir, 'test')
+    test_dir = os.path.join(dj_dir, 'test')
     test_file = os.path.join(test_dir, prefix+'test.pth')
     if not force_regenerate and os.path.isfile(test_file):
         logging.info('Test dataset found, loading...')
         test = torch.load(test_file)
         test.config = config
 
-    dev_dir = os.path.join(hs_dir, 'dev')
+    dev_dir = os.path.join(dj_dir, 'dev')
     dev_file = os.path.join(dev_dir, prefix+'dev.pth')
     if not force_regenerate and os.path.isfile(dev_file):
         logging.info('Dev dataset found, loading...')
@@ -39,9 +41,16 @@ def load_dataset(config, force_regenerate=False):
         dev.config = config
 
     if train is None or test is None or dev is None:
-        grammar = deserialize_from_file(os.path.join(hs_dir, 'grammar.txt.bin'))
-        terminal_vocab = Vocab(os.path.join(hs_dir, 'terminal_vocab.txt'), data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
-        vocab = Vocab(os.path.join(hs_dir, 'vocab.txt'), data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
+        if config.unary_closures:
+            grammar_file = os.path.join(dj_dir, 'grammar.txt.uc.bin')
+            terminal_vocab_file = os.path.join(dj_dir, 'terminal_vocab.txt.uc')
+        else:
+            grammar_file = os.path.join(dj_dir, 'grammar.txt.bin')
+            terminal_vocab_file = os.path.join(dj_dir, 'terminal_vocab.txt')
+
+        grammar = deserialize_from_file(grammar_file)
+        terminal_vocab = Vocab(terminal_vocab_file, data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
+        vocab = Vocab(os.path.join(dj_dir, 'vocab.txt'), data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
 
         if test is None:
             logging.info('Test dataset not found, generating...')
@@ -66,9 +75,8 @@ def load_dataset(config, force_regenerate=False):
 
 if __name__ == '__main__':
     config = parser.parse_args()
-    config.syntax = 'ccg'
-    load_dataset(config, force_regenerate=True)
-    config.syntax = 'pcfg'
-    load_dataset(config, force_regenerate=True)
     config.syntax = 'dependency'
+    config.unary_closures = False
+    load_dataset(config, force_regenerate=True)
+    config.unary_closures = True
     load_dataset(config, force_regenerate=True)

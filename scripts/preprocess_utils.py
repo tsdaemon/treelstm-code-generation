@@ -114,8 +114,8 @@ def ccg_parse(filepath):
 
 def parse(filepath):
     dependency_parse(filepath)
-    constituency_parse(filepath)
-    ccg_parse(filepath)
+    # constituency_parse(filepath)
+    # ccg_parse(filepath)
 
 
 # loading GLOVE word vectors

@@ -73,12 +73,6 @@ if __name__ == '__main__':
         shutil.rmtree(hs_dir)
     os.makedirs(hs_dir)
 
-    # if not os.path.exists(hs_dir):
-    #     os.makedirs(hs_dir)
-    # else:
-    #     print("Hearthstone folder found. Exiting.")
-    #     exit(1)
-
     train_dir = os.path.join(hs_dir, 'train')
     dev_dir = os.path.join(hs_dir, 'dev')
     test_dir = os.path.join(hs_dir, 'test')

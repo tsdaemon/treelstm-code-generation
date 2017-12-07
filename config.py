@@ -74,9 +74,13 @@ parser.add_argument('-valid_metric', default='bleu')
 
 # decoding
 parser.add_argument('-beam_size', default=10, type=int)
-parser.add_argument('-max_query_length', default=200, type=int)
-parser.add_argument('-max_example_action_num', default=200, type=int)
-parser.add_argument('-decode_max_time_step', default=200, type=int)
+# parser.add_argument('-max_query_length', default=200, type=int)
+# parser.add_argument('-max_example_action_num', default=200, type=int)
+# parser.add_argument('-decode_max_time_step', default=200, type=int)
+parser.add_argument('-max_query_length', default=70, type=int)
+parser.add_argument('-max_example_action_num', default=100, type=int)
+parser.add_argument('-decode_max_time_step', default=100, type=int)
+
 parser.add_argument('-head_nt_constraint', dest='head_nt_constraint', action='store_true')
 parser.add_argument('-no_head_nt_constraint', dest='head_nt_constraint', action='store_false')
 parser.set_defaults(head_nt_constraint=True)
