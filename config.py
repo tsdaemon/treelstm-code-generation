@@ -58,6 +58,10 @@ parser.add_argument('-thought_vector', dest='thought_vector', action='store_true
 parser.add_argument('-no_thought_vector', dest='thought_vector', action='store_false')
 parser.set_defaults(thought_vector=True)
 
+parser.add_argument('-unary_closures', dest='unary_closures', action='store_true')
+parser.add_argument('-no_unary_closures', dest='unary_closures', action='store_false')
+parser.set_defaults(unary_closures=True)
+
 # training
 parser.add_argument('-clip_grad', default=0., type=float)
 parser.add_argument('-train_patience', default=10, type=int)

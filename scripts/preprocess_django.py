@@ -27,7 +27,6 @@ def split_file(dataset_file, train_dir, dev_dir, test_dir, ext):
 
 
 if __name__ == '__main__':
-    args = parser.parse_args()
     logging.getLogger().setLevel(logging.DEBUG)
 
     logging.info('=' * 80)
@@ -35,7 +34,7 @@ if __name__ == '__main__':
     logging.info('=' * 80)
 
     dj_source_dir = './data/en-django/'
-    dj_dir = args.data_dir
+    dj_dir = './preprocessed/django/'
 
     if os.path.exists(dj_dir):
         shutil.rmtree(dj_dir)

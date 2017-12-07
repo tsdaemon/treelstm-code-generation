@@ -60,7 +60,6 @@ def split_input(filepath):
 
 
 if __name__ == '__main__':
-    args = parser.parse_args()
     logging.getLogger().setLevel(logging.DEBUG)
 
     logging.info('=' * 80)
@@ -68,7 +67,7 @@ if __name__ == '__main__':
     logging.info('=' * 80)
 
     hs_source_dir = './data/card2code/third_party/hearthstone/'
-    hs_dir = args.data_dir
+    hs_dir = './preprocessed/django/'
 
     if os.path.exists(hs_dir):
         shutil.rmtree(hs_dir)

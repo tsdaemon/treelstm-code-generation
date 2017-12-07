@@ -117,7 +117,12 @@ class Dataset(data.Dataset):
 
     def load_output(self, data_dir, file_name):
         logging.info('Reading code files...')
-        trees_file = os.path.join(data_dir, '{}.out.trees.bin'.format(file_name))
+        if self.config.unary_closures:
+            trees_file = '{}.out.trees.uc.bin'.format(file_name)
+        else:
+            trees_file = '{}.out.trees.bin'.format(file_name)
+
+        trees_file = os.path.join(data_dir, trees_file)
         code_file = os.path.join(data_dir, '{}.out.bin'.format(file_name))
         self.code_trees = deserialize_from_file(trees_file)
         self.codes = deserialize_from_file(code_file)
