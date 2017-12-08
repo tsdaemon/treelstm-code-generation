@@ -98,6 +98,21 @@ def draw_tree(parents_path, cat_path, token_path, line, out_path):
     hs_tree.savefig(out_path)
 
 
+def number_of_empty_lines(file):
+    with open(file, 'r') as f:
+        lines = f.readlines()
+        return sum([1 for l in lines if not l.strip()])
+
+
+def num_syntax_parse_errors(data_dir, parents):
+    errors = 0
+    for split in splits:
+        file = os.path.join(data_dir, '{}/{}.in.{}_parents'.format(split, split, parents))
+        empty_lines = number_of_empty_lines(file)
+        errors += empty_lines
+    return errors
+
+
 def draw_trees(data_dir, line):
     hs_tree_path = os.path.join(data_dir, 'dev/dev.in.constituency_parents')
     hs_category_path = os.path.join(data_dir, 'dev/dev.in.constituency_categories')
@@ -151,6 +166,15 @@ if __name__ == '__main__':
     print("Max nodes in dependency trees: {}\n"
           "Max nodes in constituency trees: {}\n"
           "Max nodes in CCG trees: {}".format(dependency_max, pcfg_max, ccg_max))
+
+    dependency_errors = num_syntax_parse_errors(args.data_dir, "dependency")
+    pcfg_errors = num_syntax_parse_errors(args.data_dir, "constituency")
+    ccg_errors = num_syntax_parse_errors(args.data_dir, "ccg")
+
+    print("# errors in dependency trees: {},\n"
+          "# errors in constituency trees: {},\n"
+          "# errors in CCG trees: {}.".format(dependency_errors, pcfg_errors, ccg_errors))
+
 
     # limit = 70
     # dependency_gt = len(list(filter(lambda l: l > limit, dependency_lens)))

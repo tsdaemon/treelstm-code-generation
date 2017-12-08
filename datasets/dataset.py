@@ -17,6 +17,10 @@ parents_prefix = {
 }
 
 
+def filter_by_ids(seq, ids):
+    return [s for i, s in enumerate(seq) if i not in ids]
+
+
 class Dataset(data.Dataset):
     def __init__(self, data_dir, file_name, grammar, vocab, terminal_vocab, config):
         super(Dataset, self).__init__()
@@ -28,6 +32,13 @@ class Dataset(data.Dataset):
 
         self.load_queries(data_dir, file_name, config.syntax)
         self.size = self.load_output(data_dir, file_name)
+        assert len(self.queries) == \
+               len(self.query_trees) == \
+               len(self.query_tokens) == \
+               len(self.codes) == \
+               len(self.code_trees) == \
+               len(self.actions)
+
         self.init_data_matrices()
 
     def prepare_torch(self, cuda):
@@ -89,7 +100,8 @@ class Dataset(data.Dataset):
         tokens_file = os.path.join(data_dir, '{}.in.tokens'.format(file_name))
 
         logging.info('Reading query trees...')
-        self.query_trees = self.read_query_trees(parents_file)
+        self.query_trees, self.errors = self.read_query_trees(parents_file)
+        logging.debug('Empty trees: {}.'.format(len(self.errors)))
 
         logging.info('Reading query tokens...')
         self.queries, self.query_tokens = self.read_query(tokens_file)
@@ -97,6 +109,8 @@ class Dataset(data.Dataset):
     def read_query(self, filename):
         with open(filename, 'r', encoding='utf-8') as f:
             query_and_tokens = [self.read_query_line(line) for line in tqdm(f.readlines())]
+            # filter errors
+            query_and_tokens = filter_by_ids(query_and_tokens, self.errors)
         # unzip
         return tuple(zip(*query_and_tokens))
 
@@ -129,7 +143,10 @@ class Dataset(data.Dataset):
     def read_query_trees(self, filename):
         with open(filename, 'r') as f:
             trees = list(map(read_tree, tqdm(f.readlines())))
-        return trees
+        # If tree is None - it is parse error.
+        errors = [id for id, tree in enumerate(trees) if tree is None]
+        trees = [tree for tree in trees if tree is not None]
+        return trees, errors
 
     def load_output(self, data_dir, file_name):
         logging.info('Reading code files...')
@@ -140,8 +157,9 @@ class Dataset(data.Dataset):
 
         trees_file = os.path.join(data_dir, trees_file)
         code_file = os.path.join(data_dir, '{}.out.bin'.format(file_name))
-        self.code_trees = deserialize_from_file(trees_file)
-        self.codes = deserialize_from_file(code_file)
+        # filter errors
+        self.code_trees = filter_by_ids(deserialize_from_file(trees_file), self.errors)
+        self.codes = filter_by_ids(deserialize_from_file(code_file), self.errors)
 
         logging.info('Constructing code representation...')
         self.actions = []
@@ -208,6 +226,7 @@ class Dataset(data.Dataset):
                 continue
 
             self.actions.append(actions)
+
         return len(self.actions)
 
     def init_data_matrices(self):

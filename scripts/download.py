@@ -128,7 +128,7 @@ def download_hs(dirname):
         print('Found HS dataset - skip')
         return
 
-    cmd = ('git clone https://github.com/deepmind/card2code %s' % dirname)
+    cmd = ('git clone https://github.com/tsdaemon/card2code %s' % dirname)
     os.system(cmd)
 
 
