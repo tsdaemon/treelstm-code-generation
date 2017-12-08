@@ -77,7 +77,8 @@ if __name__ == '__main__':
         trainer.train_all(train_data, dev_data, test_data, args.output_dir)
     elif args.mode == 'validate':
         tmp_epoch_dir = os.path.join(args.output_dir, 'tmp')
-        os.mkdir(tmp_epoch_dir)
+        if not os.path.exists(tmp_epoch_dir):
+            os.mkdir(tmp_epoch_dir)
         trainer.validate(dev_data, 1, tmp_epoch_dir)
     else:
         raise Exception("Unknown mode!")

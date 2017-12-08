@@ -188,7 +188,9 @@ class ChildSumTreeLSTM(nn.Module):
         Xo = self.ox(X * dr_X[3])
 
         self.forward_inner(tree, Xi, Xf, Xu, Xo, dr_H)
-        return tree.state[1].squeeze(), tree.state[0].squeeze(), torch.stack([t.state[1] for t in tree.data()]).squeeze()
+        return tree.state[1], \
+               tree.state[0], \
+               torch.stack([t.state[1] for t in tree.data()]).squeeze(1)
 
 
 class EncoderLSTMWrapper(nn.Module):
@@ -270,6 +272,8 @@ class EncoderLSTMWrapper(nn.Module):
         ctx = []
         # encoder can process only one tree at the time
         for tree, input in zip(trees, inputs):
+            # (1, hidden_dim), (1, hidden_dim)
+            # (1, seq_len, hidden_dim)
             h1, c1, ctx1 = self.encoder(tree, input)
             h.append(h1)
             c.append(c1)
@@ -277,8 +281,8 @@ class EncoderLSTMWrapper(nn.Module):
 
         # all ctx must be one length to be stacked
         ctx = add_padding_and_stack(ctx, inputs.is_cuda)
-        h = torch.stack(h)
-        c = torch.stack(h)
+        h = torch.cat(h, dim=0)
+        c = torch.cat(c, dim=0)
 
         return h, c, ctx
 

@@ -88,6 +88,24 @@ def add_padding_and_stack(tensors, cuda, dim=0, max_length=None):
     return torch.stack(result)
 
 
+def add_padding_and_cat(tensors, cuda, dim=1, cat_dim=0, max_length=None):
+    if max_length is None:
+        max_length = max([t.data.shape[dim] for t in tensors])
+
+    result = []
+    for tensor in tensors:
+        sh = list(tensor.data.shape)
+        sh[dim] = max_length-sh[dim]
+        assert sh[dim] >= 0
+
+        if sh[dim] > 0:
+            padding = Var(zeros(*sh, cuda=cuda))
+            tensor = torch.cat([tensor, padding], dim=dim)
+        result.append(tensor)
+
+    return torch.cat(result, dim=cat_dim)
+
+
 def parameter_init_zero(*dims):
     return nn.Parameter(torch.FloatTensor(*dims).zero_())
 
