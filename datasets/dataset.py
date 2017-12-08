@@ -164,7 +164,8 @@ class Dataset(data.Dataset):
         logging.info('Constructing code representation...')
         self.actions = []
 
-        for code_tree, query_tokens in tqdm(zip(self.code_trees, self.query_tokens)):
+        for code_tree, query_tokens, query_tree in \
+                tqdm(zip(self.code_trees, self.query_tokens, self.query_trees)):
             rule_list, rule_parents = code_tree.get_productions(include_value_node=True)
 
             actions = []
@@ -207,7 +208,7 @@ class Dataset(data.Dataset):
 
                         # cannot copy, only generation
                         # could be unk!
-                        if tok_src_idx < 0:
+                        if tok_src_idx < 0 or tok_src_idx > query_tree.size()-1:
                             action = Action(GEN_TOKEN, d)
                         else:  # copy
                             if term_tok_id != Constants.UNK:

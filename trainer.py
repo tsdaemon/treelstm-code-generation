@@ -99,7 +99,7 @@ class Trainer(object):
             }
             self.report_bot(report_result)
 
-    def train(self, dataset, epoch):
+    def train(self, dataset, epoch, st_batch=None):
         self.model.train()
         self.optimizer.zero_grad()
         total_loss = 0.0
@@ -108,7 +108,10 @@ class Trainer(object):
         if self.config.cuda:
             indices = indices.cuda()
         total_batches = math.floor(len(indices)/batch_size)+1
-        batches = get_batches(indices, batch_size)
+        batches = list(get_batches(indices, batch_size))
+
+        if st_batch:
+            batches = batches[st_batch:]
 
         for i, batch in tqdm(enumerate(batches), desc='Training epoch '+str(epoch+1)+'', total=total_batches):
             trees, queries, tgt_node_seq, tgt_par_rule_seq, tgt_par_t_seq, \

@@ -80,6 +80,8 @@ if __name__ == '__main__':
         if not os.path.exists(tmp_epoch_dir):
             os.mkdir(tmp_epoch_dir)
         trainer.validate(dev_data, 1, tmp_epoch_dir)
+    elif args.mode == 'start_batch':
+        trainer.train(train_data, 0, st_batch=59)
     else:
         raise Exception("Unknown mode!")
 
