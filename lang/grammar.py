@@ -36,9 +36,6 @@ class Grammar(object):
         assert len(root_node) == 1
         self.root_node = next(iter(root_node))
 
-        self.terminal_nodes = rhs_nodes - lhs_nodes
-        self.terminal_types = set([n.type for n in self.terminal_nodes])
-
         self.node_type_to_id = OrderedDict()
         for i, type in enumerate(node_types, start=0):
             self.node_type_to_id[type] = i
@@ -47,11 +44,6 @@ class Grammar(object):
             self.rule_to_id[rule] = gid
 
         self.id_to_rule = OrderedDict((v, k) for (k, v) in self.rule_to_id.items())
-
-        logging.info('num. rules: %d', len(self.rules))
-        logging.info('num. types: %d', len(self.node_type_to_id))
-        logging.info('root: %s', self.root_node)
-        logging.info('terminals: %s', ', '.join(repr(n) for n in self.terminal_nodes))
 
     def __iter__(self):
         return self.rules.__iter__()

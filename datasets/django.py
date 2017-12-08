@@ -41,12 +41,11 @@ def load_dataset(config, force_regenerate=False):
         dev.config = config
 
     if train is None or test is None or dev is None:
+        terminal_vocab_file = os.path.join(dj_dir, 'terminal_vocab.txt')
         if config.unary_closures:
             grammar_file = os.path.join(dj_dir, 'grammar.txt.uc.bin')
-            terminal_vocab_file = os.path.join(dj_dir, 'terminal_vocab.txt.uc')
         else:
             grammar_file = os.path.join(dj_dir, 'grammar.txt.bin')
-            terminal_vocab_file = os.path.join(dj_dir, 'terminal_vocab.txt')
 
         grammar = deserialize_from_file(grammar_file)
         terminal_vocab = Vocab(terminal_vocab_file, data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])

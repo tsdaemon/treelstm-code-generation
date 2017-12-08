@@ -28,16 +28,16 @@ class Dataset(data.Dataset):
 
         self.load_queries(data_dir, file_name, config.syntax)
         self.size = self.load_output(data_dir, file_name)
-        self.init_data_matrices()
+        self.init_actions_tensors()
 
     def prepare_torch(self, cuda):
         if cuda:
-            self.queries = self.queries.cuda()
-            self.tgt_node_seq = self.tgt_node_seq.cuda()
-            self.tgt_par_rule_seq = self.tgt_par_rule_seq.cuda()
-            self.tgt_par_t_seq = self.tgt_par_t_seq.cuda()
-            self.tgt_action_seq = self.tgt_action_seq.cuda()
-            self.tgt_action_seq_type = self.tgt_action_seq_type.cuda()
+            self.queries = [q.cuda() for q in self.queries]
+            self.tgt_node_seq = [q.cuda() for q in self.tgt_node_seq]
+            self.tgt_par_rule_seq = [q.cuda() for q in self.tgt_par_rule_seq]
+            self.tgt_par_t_seq = [q.cuda() for q in self.tgt_par_t_seq]
+            self.tgt_action_seq = [q.cuda() for q in self.tgt_action_seq]
+            self.tgt_action_seq_type = [q.cuda() for q in self.tgt_action_seq_type]
 
     def __len__(self):
         return self.size
@@ -47,6 +47,7 @@ class Dataset(data.Dataset):
 
         query = self.queries[index]
         query_tokens = self.query_tokens[index]
+        query_tokens = self.fix_seq_length_one(query_tokens, query.size(), Constants.PAD)
 
         tgt_node_seq = self.tgt_node_seq[index]
         tgt_par_rule_seq = self.tgt_par_rule_seq[index]
@@ -63,15 +64,26 @@ class Dataset(data.Dataset):
 
     def get_batch(self, indices):
         trees = [deepcopy(self.query_trees[index]) for index in indices]
-        queries = self.queries[indices]
+        max_tree_length = max([tree.size() for tree in trees])
 
-        tgt_node_seq = self.tgt_node_seq[indices]
-        tgt_par_rule_seq = self.tgt_par_rule_seq[indices]
-        tgt_par_t_seq = self.tgt_par_t_seq[indices]
-        tgt_action_seq = self.tgt_action_seq[indices]
-        tgt_action_seq_type = self.tgt_action_seq_type[indices]
+        queries = self.get_seq_batch(self.queries, indices, max_tree_length, Constants.PAD)
+
+        max_out_length = min(max([len(self.tgt_node_seq[index]) for index in indices]), self.config.max_actions_length)
+
+        tgt_node_seq = self.get_seq_batch(self.tgt_node_seq, indices, max_out_length, 0)
+        tgt_par_rule_seq = self.get_seq_batch(self.tgt_par_rule_seq, indices, max_out_length, 0)
+        tgt_par_t_seq = self.get_seq_batch(self.tgt_par_t_seq, indices, max_out_length, 0)
+        tgt_action_seq = self.get_seq_batch(self.tgt_action_seq, indices, max_out_length, 0)
+        tgt_action_seq_type = self.get_seq_batch(self.tgt_action_seq_type, indices, max_out_length, 0)
+
         return trees, queries, \
-               tgt_node_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq, tgt_action_seq_type
+               tgt_node_seq, tgt_par_rule_seq, tgt_par_t_seq, \
+               tgt_action_seq, tgt_action_seq_type
+
+    def get_seq_batch(self, seq, indices, max_size, pad_item):
+        seq = [seq[index] for index in indices]
+        seq = self.fix_seq_length(seq, max_size, pad_item)
+        return torch.stack(seq)
 
     def load_queries(self, data_dir, file_name, syntax):
         parents_file = os.path.join(data_dir, '{}.in.{}_parents'.format(file_name, parents_prefix[syntax]))
@@ -82,8 +94,8 @@ class Dataset(data.Dataset):
 
         logging.info('Reading query tokens...')
         self.queries, self.query_tokens = self.read_query(tokens_file)
-        self.queries = self.fix_query_length(self.queries)
-        self.queries = torch.stack(self.queries)
+        # self.queries = self.fix_query_length(self.queries)
+        # self.queries = torch.stack(self.queries)
 
     def read_query(self, filename):
         with open(filename, 'r', encoding='utf-8') as f:
@@ -96,19 +108,26 @@ class Dataset(data.Dataset):
         indices = self.vocab.convertToIdx(tokens, Constants.UNK_WORD)
         return torch.LongTensor(indices), tokens
 
-    def fix_query_length(self, sentences):
+    def fix_seq_length(self, seqns, max_size, pad_item):
         ls = []
-        for sentence in sentences:
-            ls.append(self.fix_length(sentence))
+        for seq in seqns:
+            seq_padded = self.fix_seq_length_one(seq, max_size, pad_item)
+            ls.append(seq_padded)
         return ls
 
-    def fix_length(self, sentence):
-        max_size = self.config.max_query_length
-        if len(sentence) < max_size:
-            pads = [Constants.PAD]*(max_size-len(sentence))
-            return torch.LongTensor(sentence.tolist() + pads)
+    def fix_seq_length_one(self, seq, max_size, pad_item):
+        if len(seq) < max_size:
+            size_0 = max_size-len(seq)
+            size_next = list(seq.size()[1:])
+            size_pad = [size_0] + size_next
+            pads = torch.LongTensor(*size_pad)
+            if seq.is_cuda:
+                pads = pads.cuda()
+            pads = pads.fill_(pad_item)
+
+            return torch.cat([seq, pads], dim=0)
         else:
-            return sentence[:max_size]
+            return seq[:max_size]
 
     def read_query_trees(self, filename):
         with open(filename, 'r') as f:
@@ -173,7 +192,7 @@ class Dataset(data.Dataset):
 
                         # cannot copy, only generation
                         # could be unk!
-                        if tok_src_idx < 0 or tok_src_idx >= self.config.max_query_length:
+                        if tok_src_idx < 0:
                             action = Action(GEN_TOKEN, d)
                         else:  # copy
                             if term_tok_id != Constants.UNK:
@@ -194,58 +213,66 @@ class Dataset(data.Dataset):
             self.actions.append(actions)
         return len(self.actions)
 
-    def init_data_matrices(self):
-        max_example_action_num = self.config.max_example_action_num
+    def init_actions_tensors(self):
         terminal_vocab = self.terminal_vocab
 
-        logging.info('Initializing data matrices...')
-        self.tgt_node_seq = torch.LongTensor(self.size, max_example_action_num).zero_()
-        self.tgt_par_rule_seq = torch.LongTensor(self.size, max_example_action_num).zero_()
-        self.tgt_par_t_seq = torch.LongTensor(self.size, max_example_action_num).zero_()
-        self.tgt_action_seq = torch.LongTensor(self.size, max_example_action_num, 3).zero_()
-        self.tgt_action_seq_type = torch.LongTensor(self.size, max_example_action_num, 3).zero_()
+        logging.info('Initializing actions...')
+        self.tgt_node_seq = []
+        self.tgt_par_rule_seq = []
+        self.tgt_par_t_seq = []
+        self.tgt_action_seq = []
+        self.tgt_action_seq_type = []
 
-        for eid, actions in enumerate(self.actions):
-            exg_action_seq = actions[:max_example_action_num]
+        for actions in self.actions:
+            size = len(actions)
+            tgt_node_seq = torch.LongTensor(size).zero_()
+            tgt_par_rule_seq = torch.LongTensor(size).zero_()
+            tgt_par_t_seq = torch.LongTensor(size).zero_()
+            tgt_action_seq = torch.LongTensor(size, 3).zero_()
+            tgt_action_seq_type = torch.LongTensor(size, 3).zero_()
 
-            assert len(exg_action_seq) > 0
-
-            for t, action in enumerate(exg_action_seq):
+            for t, action in enumerate(actions):
                 if action.act_type == APPLY_RULE:
                     rule = action.data['rule']
-                    self.tgt_action_seq[eid, t, 0] = self.grammar.rule_to_id[rule]
-                    self.tgt_action_seq_type[eid, t, 0] = 1
+                    tgt_action_seq[t, 0] = self.grammar.rule_to_id[rule]
+                    tgt_action_seq_type[t, 0] = 1
                 elif action.act_type == GEN_TOKEN:
                     token = action.data['literal']
                     token_id = terminal_vocab.getIndex(token, Constants.UNK)
-                    self.tgt_action_seq[eid, t, 1] = token_id
-                    self.tgt_action_seq_type[eid, t, 1] = 1
+                    tgt_action_seq[t, 1] = token_id
+                    tgt_action_seq_type[t, 1] = 1
                 elif action.act_type == COPY_TOKEN:
                     src_token_idx = action.data['source_idx']
-                    self.tgt_action_seq[eid, t, 2] = src_token_idx
-                    self.tgt_action_seq_type[eid, t, 2] = 1
+                    tgt_action_seq[t, 2] = src_token_idx
+                    tgt_action_seq_type[t, 2] = 1
                 elif action.act_type == GEN_COPY_TOKEN:
                     token = action.data['literal']
                     token_id = terminal_vocab.getIndex(token, Constants.UNK)
-                    self.tgt_action_seq[eid, t, 1] = token_id
-                    self.tgt_action_seq_type[eid, t, 1] = 1
+                    tgt_action_seq[t, 1] = token_id
+                    tgt_action_seq_type[t, 1] = 1
 
                     src_token_idx = action.data['source_idx']
-                    self.tgt_action_seq[eid, t, 2] = src_token_idx
-                    self.tgt_action_seq_type[eid, t, 2] = 1
+                    tgt_action_seq[t, 2] = src_token_idx
+                    tgt_action_seq_type[t, 2] = 1
                 else:
                     raise RuntimeError('wrong action type!')
 
                 # parent information
                 rule = action.data['rule']
                 parent_rule = action.data['parent_rule']
-                self.tgt_node_seq[eid, t] = self.grammar.get_node_type_id(rule.parent)
+                tgt_node_seq[t] = self.grammar.get_node_type_id(rule.parent)
                 if parent_rule:
-                    self.tgt_par_rule_seq[eid, t] = self.grammar.rule_to_id[parent_rule]
+                    tgt_par_rule_seq[t] = self.grammar.rule_to_id[parent_rule]
                 else:
                     assert t == 0
-                    self.tgt_par_rule_seq[eid, t] = -1
+                    tgt_par_rule_seq[t] = -1
 
                 # parent hidden states
                 parent_t = action.data['parent_t']
-                self.tgt_par_t_seq[eid, t] = parent_t
+                tgt_par_t_seq[t] = parent_t
+
+            self.tgt_node_seq.append(tgt_node_seq)
+            self.tgt_par_rule_seq.append(tgt_par_rule_seq)
+            self.tgt_par_t_seq.append(tgt_par_t_seq)
+            self.tgt_action_seq.append(tgt_action_seq)
+            self.tgt_action_seq_type.append(tgt_action_seq_type)

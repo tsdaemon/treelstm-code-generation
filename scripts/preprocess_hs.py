@@ -43,9 +43,8 @@ def tranform_description(vars, desc):
 
 def split_input(filepath):
     logging.info('Splitting input ' + filepath)
-    dst_dir = os.path.dirname(filepath)
     with open(filepath, 'r') as datafile, \
-         open(os.path.join(dst_dir, filepath + '.description'), 'w') as dfile:
+         open(filepath + '.description', 'w') as dfile:
             for line in tqdm(datafile.readlines()):
                 vars = []
                 position = 0
@@ -67,7 +66,7 @@ if __name__ == '__main__':
     logging.info('=' * 80)
 
     hs_source_dir = './data/card2code/third_party/hearthstone/'
-    hs_dir = './preprocessed/django/'
+    hs_dir = './preprocessed/hs/'
 
     if os.path.exists(hs_dir):
         shutil.rmtree(hs_dir)
@@ -91,9 +90,9 @@ if __name__ == '__main__':
     split_input(os.path.join(test_dir, 'test.in'))
 
     logging.info('Tokenizing')
-    tokenize(os.path.join(dev_dir, 'dev.in.description'))
-    tokenize(os.path.join(train_dir, 'train.in.description'))
-    tokenize(os.path.join(test_dir, 'test.in.description'))
+    tokenize(os.path.join(dev_dir, 'dev.in.description'), os.path.join(dev_dir, 'dev.in.tokens'))
+    tokenize(os.path.join(train_dir, 'train.in.description'), os.path.join(train_dir, 'train.in.tokens'))
+    tokenize(os.path.join(test_dir, 'test.in.description'), os.path.join(test_dir, 'test.in.tokens'))
 
     logging.info('Building vocabulary')
     vocab = build_vocab_from_token_files(glob.glob(os.path.join(hs_dir, '*/*.tokens')), min_frequency=3)
@@ -127,9 +126,6 @@ if __name__ == '__main__':
     parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'), os.path.join(test_dir, 'test.out.bin'), lb)
     parse_trees = parse_trees_dev+parse_trees_train+parse_trees_test
 
-    logging.info('Applying unary closures')
-    do_unary_closures(parse_trees, 30)
-
     logging.info('Saving trees')
     write_trees(parse_trees_dev, os.path.join(dev_dir, 'dev.out.trees'))
     write_trees(parse_trees_train, os.path.join(train_dir, 'train.out.trees'))
@@ -140,4 +136,15 @@ if __name__ == '__main__':
 
     logging.info('Creating terminal vocabulary')
     write_terminal_tokens_vocab(grammar, parse_trees, os.path.join(hs_dir, 'terminal_vocab.txt'), min_freq=3)
+
+    logging.info('Applying unary closures')
+    do_unary_closures(parse_trees, 30)
+
+    logging.info('Saving trees')
+    write_trees(parse_trees_dev, os.path.join(dev_dir, 'dev.out.trees.uc'))
+    write_trees(parse_trees_train, os.path.join(train_dir, 'train.out.trees.uc'))
+    write_trees(parse_trees_test, os.path.join(test_dir, 'test.out.trees.uc'))
+
+    logging.info('Creating grammar')
+    grammar = write_grammar(parse_trees, os.path.join(hs_dir, 'grammar.txt.uc'))
 

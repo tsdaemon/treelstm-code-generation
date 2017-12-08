@@ -10,12 +10,14 @@ from config import parser
 
 
 def load_dataset(config, force_regenerate=False):
-    hs_dir = config.data_dir
+    hs_dir = './preprocessed/hs'
     logging.info('='*80)
     logging.info('Loading datasets from folder ' + hs_dir)
     logging.info('='*80)
     train, test, dev = None, None, None
     prefix = config.syntax + '_'
+    if config.unary_closures:
+        prefix += 'uc_'
 
     train_dir = os.path.join(hs_dir, 'train')
     train_file = os.path.join(train_dir, prefix+'train.pth')
@@ -39,8 +41,14 @@ def load_dataset(config, force_regenerate=False):
         dev.config = config
 
     if train is None or test is None or dev is None:
-        grammar = deserialize_from_file(os.path.join(hs_dir, 'grammar.txt.bin'))
-        terminal_vocab = Vocab(os.path.join(hs_dir, 'terminal_vocab.txt'), data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
+        terminal_vocab_file = os.path.join(hs_dir, 'terminal_vocab.txt')
+        if config.unary_closures:
+            grammar_file = os.path.join(hs_dir, 'grammar.txt.uc.bin')
+        else:
+            grammar_file = os.path.join(hs_dir, 'grammar.txt.bin')
+
+        grammar = deserialize_from_file(grammar_file)
+        terminal_vocab = Vocab(terminal_vocab_file, data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
         vocab = Vocab(os.path.join(hs_dir, 'vocab.txt'), data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
 
         if test is None:

@@ -250,44 +250,44 @@ class PointerNet(nn.Module):
         self.softmax = nn.Softmax(dim=-1);
 
     def forward_scores(self, ctx, decoder_states):
-        # (batch_size, max_query_length, ptrnet_hidden_dim)
+        # (batch_size, query_length, ptrnet_hidden_dim)
         ctx_trans = self.dense1_input(ctx)
 
         # (batch_size, max_decode_step, ptrnet_hidden_dim)
         decoder_trans = self.dense1_h(decoder_states)
 
-        # (batch_size, 1, max_query_length, ptrnet_hidden_dim)
+        # (batch_size, 1, query_length, ptrnet_hidden_dim)
         ctx_trans = ctx_trans.unsqueeze(1)
 
         # (batch_size, max_decode_step, 1, ptrnet_hidden_dim)
         decoder_trans = decoder_trans.unsqueeze(2)
 
-        # (batch_size, max_decode_step, max_query_length, ptr_net_hidden_dim)
+        # (batch_size, max_decode_step, query_length, ptr_net_hidden_dim)
         dense1_trans = F.tanh(ctx_trans + decoder_trans)
 
-        # (batch_size,  max_decode_step, max_query_length, 1)
+        # (batch_size,  max_decode_step, query_length, 1)
         scores = self.dense2(dense1_trans)
 
-        # (batch_size,  max_decode_step, max_query_length)
+        # (batch_size,  max_decode_step, query_length)
         return scores.squeeze(3)
 
     def forward(self, ctx, decoder_states):
-        # (batch_size,  max_decode_step, max_query_length)
+        # (batch_size,  max_decode_step, query_length)
         scores = self.forward_scores(ctx, decoder_states)
 
-        # (batch_size,  max_decode_step, max_query_length)
+        # (batch_size,  max_decode_step, query_length)
         scores = self.softmax(scores)
 
-        # (batch_size,  max_decode_step, max_query_length)
+        # (batch_size,  max_decode_step, query_length)
         return scores
 
     def forward_train(self, ctx, decoder_states):
-        # (batch_size,  max_decode_step, max_query_length)
+        # (batch_size,  max_decode_step, query_length)
         scores = self.forward_scores(ctx, decoder_states)
 
-        # (batch_size,  max_decode_step, max_query_length)
+        # (batch_size,  max_decode_step, query_length)
         scores = self.log_softmax(scores)
 
-        # (batch_size,  max_decode_step, max_query_length)
+        # (batch_size,  max_decode_step, query_length)
         return scores
 

@@ -266,7 +266,7 @@ class EncoderLSTMWrapper(nn.Module):
         # (batch_size, encoder_hidden_dim)
         h = []
         c = []
-        # (batch_size, max_query_length, encoder_hidden_dim)
+        # (batch_size, query_length, encoder_hidden_dim)
         ctx = []
         # encoder can process only one tree at the time
         for tree, input in zip(trees, inputs):

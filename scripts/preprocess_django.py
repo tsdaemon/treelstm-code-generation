@@ -53,9 +53,9 @@ if __name__ == '__main__':
     split_file(os.path.join(dj_dir, 'all.code'), train_dir, dev_dir, test_dir, 'out')
 
     logging.info('Tokenizing')
-    tokenize(os.path.join(dev_dir, 'dev.in'))
-    tokenize(os.path.join(train_dir, 'train.in'))
-    tokenize(os.path.join(test_dir, 'test.in'))
+    tokenize(os.path.join(dev_dir, 'dev.in'), os.path.join(dev_dir, 'dev.in.tokens'))
+    tokenize(os.path.join(train_dir, 'train.in'), os.path.join(train_dir, 'train.in.tokens'))
+    tokenize(os.path.join(test_dir, 'test.in'), os.path.join(test_dir, 'test.in.tokens'))
 
     logging.info('Building vocabulary')
     vocab = build_vocab_from_token_files(glob.glob(os.path.join(dj_dir, '*/*.tokens')), min_frequency=3)
@@ -110,6 +110,3 @@ if __name__ == '__main__':
 
     logging.info('Creating grammar')
     grammar = write_grammar(parse_trees, os.path.join(dj_dir, 'grammar.txt.uc'))
-
-    logging.info('Creating terminal vocabulary')
-    write_terminal_tokens_vocab(grammar, parse_trees, os.path.join(dj_dir, 'terminal_vocab.txt.uc'), min_freq=3)

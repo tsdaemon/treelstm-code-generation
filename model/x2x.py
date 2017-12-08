@@ -96,7 +96,7 @@ class Tree2TreeModel(nn.Module):
         hyp_samples = [root_hyp]
 
         # source word id in the terminal vocab
-        src_token_id = self.terminal_vocab.convertToIdx(query_raw, Constants.UNK_WORD)[:self.config.max_query_length]
+        src_token_id = self.terminal_vocab.convertToIdx(query_raw, Constants.UNK_WORD)
         unk_pos_list = [x for x, t in enumerate(src_token_id) if t == Constants.UNK]
 
         # sometimes a word may appear multi-times in the source, in this case,
@@ -135,7 +135,7 @@ class Tree2TreeModel(nn.Module):
             index = Var(parent_t.unsqueeze(1).unsqueeze(2).expand(-1, -1, self.config.decoder_hidden_dim), requires_grad=False)
             # (hyp_num, decoder_hidden_dim)
             parent_h = torch.gather(hist_h, 1, index).squeeze(1)
-            # (live_hyp_num, max_query_length, decoder_hidden_dim)
+            # (live_hyp_num, query_length, decoder_hidden_dim)
             ctx_tiled = ctx.repeat(live_hyp_num, 1, 1)
 
             h, c, \
@@ -338,7 +338,7 @@ class Tree2TreeModel(nn.Module):
 
     def forward_encode(self, trees, queries):
         queries = Var(queries, requires_grad=False)
-        # (batch_size, max_query_length, word_embed_dim)
+        # (batch_size, query_length, word_embed_dim)
         query_embeds = self.word_embedding(queries)
         return self.encoder(trees, query_embeds)
 
@@ -387,7 +387,7 @@ class Tree2TreeModel(nn.Module):
         # (batch_size, target_vocab_size)
         vocab_prob = self.vocab_gen_softmax(decoder_hidden_state_trans_token)
 
-        # (batch_size, max_query_length)
+        # (batch_size, query_length)
         copy_prob = self.src_ptr_net(ctx, decoder_concat.unsqueeze(1)).squeeze(1)
 
         return h, c, \
@@ -397,7 +397,7 @@ class Tree2TreeModel(nn.Module):
                       tgt_node_seq, tgt_action_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq_type):
 
         # (batch_size, encoder_hidden_dim), (batch_size, encoder_hidden_dim)
-        # (batch_size, max_query_length, encoder_hidden_dim)
+        # (batch_size, query_length, encoder_hidden_dim)
         h, c, ctx = self.forward_encode(trees, queries)
 
         # prepare output for teacher forced decoding
@@ -454,7 +454,7 @@ class Tree2TreeModel(nn.Module):
         # (batch_size, max_example_action_num, target_vocab_size)
         vocab_predict = self.vocab_gen_softmax.forward_train(decoder_hidden_state_trans_token)
 
-        # (batch_size, max_example_action_num, max_query_length)
+        # (batch_size, max_example_action_num, query_length)
         copy_prob = self.src_ptr_net.forward_train(ctx, decoder_concat)
 
         # (batch_size, max_example_action_num)

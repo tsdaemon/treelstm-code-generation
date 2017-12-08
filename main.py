@@ -19,10 +19,6 @@ if __name__ == '__main__':
 
     # arguments validation
     args.cuda = args.cuda and torch.cuda.is_available()
-    if args.cuda:
-        torch.set_default_tensor_type('torch.cuda.FloatTensor')
-    else:
-        torch.set_default_tensor_type('torch.FloatTensor')
 
     # random seed
     np.random.seed(args.random_seed)
