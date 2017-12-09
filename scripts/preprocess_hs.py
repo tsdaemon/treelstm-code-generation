@@ -90,13 +90,13 @@ if __name__ == '__main__':
     split_input(os.path.join(test_dir, 'test.in'))
 
     logging.info('Tokenizing')
-    tokenize_with_str_map(os.path.join(dev_dir, 'dev.in'),
+    tokenize_with_str_map(os.path.join(dev_dir, 'dev.in.description'),
                           os.path.join(dev_dir, 'dev.in.tokens'),
                           os.path.join(dev_dir, 'dev.in.strmap.bin'))
-    tokenize_with_str_map(os.path.join(train_dir, 'train.in'),
+    tokenize_with_str_map(os.path.join(train_dir, 'train.in.description'),
                           os.path.join(train_dir, 'train.in.tokens'),
                           os.path.join(train_dir, 'train.in.strmap.bin'))
-    tokenize_with_str_map(os.path.join(test_dir, 'test.in'),
+    tokenize_with_str_map(os.path.join(test_dir, 'test.in.description'),
                           os.path.join(test_dir, 'test.in.tokens'),
                           os.path.join(test_dir, 'test.in.strmap.bin'))
 

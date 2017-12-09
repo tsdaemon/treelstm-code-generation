@@ -95,7 +95,7 @@ def dependency_parse(filepath):
     filepre = os.path.splitext(os.path.basename(filepath))[0]
     parentpath = os.path.join(dirpath, filepre + '.dependency_parents')
     relpath = os.path.join(dirpath, filepre + '.dependency_rels')
-    cmd = ('java -Xmx4096M -cp %s DependencyParse -parentpath %s -relpath %s < %s'
+    cmd = ('java -cp %s DependencyParse -parentpath %s -relpath %s < %s'
         % (classpath, parentpath, relpath, filepath))
     os.system(cmd)
 
@@ -106,7 +106,7 @@ def constituency_parse(filepath):
     filepre = os.path.splitext(os.path.basename(filepath))[0]
     parentpath = os.path.join(dirpath, filepre + '.constituency_parents')
     catpath = os.path.join(dirpath, filepre + '.constituency_categories')
-    cmd = ('java -Xmx4096M -cp {} ConstituencyParse -parentpath {} -catpath {} < {}'.format
+    cmd = ('java -cp {} ConstituencyParse -parentpath {} -catpath {} < {}'.format
         (classpath, parentpath, catpath, filepath))
     os.system(cmd)
 
@@ -117,7 +117,7 @@ def ccg_parse(filepath):
     filepre = os.path.splitext(os.path.basename(filepath))[0]
     parentpath = os.path.join(dirpath, filepre + '.ccg_parents')
     catpath = os.path.join(dirpath, filepre + '.ccg_categories')
-    cmd = ('java -Xmx4096M -cp {} CCGParse -parentpath {} -catpath {} -modelpath '
+    cmd = ('java -cp {} CCGParse -parentpath {} -catpath {} -modelpath '
            'lib/easyccg/model < {}'.format(classpath, parentpath, catpath, filepath))
     os.system(cmd)
 
