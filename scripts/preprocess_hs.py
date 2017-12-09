@@ -90,9 +90,15 @@ if __name__ == '__main__':
     split_input(os.path.join(test_dir, 'test.in'))
 
     logging.info('Tokenizing')
-    tokenize(os.path.join(dev_dir, 'dev.in.description'), os.path.join(dev_dir, 'dev.in.tokens'))
-    tokenize(os.path.join(train_dir, 'train.in.description'), os.path.join(train_dir, 'train.in.tokens'))
-    tokenize(os.path.join(test_dir, 'test.in.description'), os.path.join(test_dir, 'test.in.tokens'))
+    tokenize_with_str_map(os.path.join(dev_dir, 'dev.in'),
+                          os.path.join(dev_dir, 'dev.in.tokens'),
+                          os.path.join(dev_dir, 'dev.in.strmap.bin'))
+    tokenize_with_str_map(os.path.join(train_dir, 'train.in'),
+                          os.path.join(train_dir, 'train.in.tokens'),
+                          os.path.join(train_dir, 'train.in.strmap.bin'))
+    tokenize_with_str_map(os.path.join(test_dir, 'test.in'),
+                          os.path.join(test_dir, 'test.in.tokens'),
+                          os.path.join(test_dir, 'test.in.strmap.bin'))
 
     logging.info('Building vocabulary')
     vocab = build_vocab_from_token_files(glob.glob(os.path.join(hs_dir, '*/*.tokens')), min_frequency=3)
@@ -121,9 +127,18 @@ if __name__ == '__main__':
 
     logging.info('Parsing output code')
     lb = 'В§' if system == 'w' else '§'
-    parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'), os.path.join(dev_dir, 'dev.out.bin'), lb)
-    parse_trees_train = parse_code_trees(os.path.join(train_dir, 'train.out'), os.path.join(train_dir, 'train.out.bin'), lb)
-    parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'), os.path.join(test_dir, 'test.out.bin'), lb)
+    parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'),
+                                       os.path.join(dev_dir, 'dev.in.strmap.bin'),
+                                       os.path.join(dev_dir, 'dev.out.bin'),
+                                       os.path.join(dev_dir, 'dev.out.raw.bin'))
+    parse_trees_train = parse_code_trees(os.path.join(train_dir, 'train.out'),
+                                         os.path.join(train_dir, 'train.in.strmap.bin'),
+                                         os.path.join(train_dir, 'train.out.bin'),
+                                         os.path.join(train_dir, 'train.out.raw.bin'))
+    parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'),
+                                        os.path.join(test_dir, 'test.in.strmap.bin'),
+                                        os.path.join(test_dir, 'test.out.bin'),
+                                        os.path.join(test_dir, 'test.out.raw.bin'))
     parse_trees = parse_trees_dev+parse_trees_train+parse_trees_test
 
     logging.info('Saving trees')

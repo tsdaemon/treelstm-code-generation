@@ -5,7 +5,7 @@ import astor
 import nltk
 
 from natural_lang.vocab import Vocab
-from utils.io import serialize_to_file
+from utils.io import *
 from lang.unaryclosure import apply_unary_closures, get_top_unary_closures
 from lang.parse import *
 
@@ -161,17 +161,26 @@ def load_word_vectors(path):
     return vocab, vectors
 
 
-def parse_code_trees(code_file, code_out_file, lb=None):
+def parse_code_trees(code_file, strmap_file, code_out_file, raw_code_out_file, lb=None):
     logging.info('Parsing code trees from file {}'.format(code_file))
+    strmaps = deserialize_from_file(strmap_file)
+
     parse_trees = []
+    raw_codes = []
     codes = []
-    for line in tqdm(open(code_file).readlines()):
+    for line, str_map in tqdm(zip(open(code_file).readlines(), strmaps)):
         line = line.strip().replace('    ', '\t')
         if lb is not None:
             line = line.replace(lb, '\n')
         code = line.replace('    ', '\t')
 
+        raw_code = code
+        raw_codes.append(raw_code)
+
         code = canonicalize_code(code)
+        for str_literal, str_repr in str_map.iteritems():
+            code = code.replace(str_literal, '\'' + str_repr + '\'')
+
         codes.append(code)
 
         p_tree = parse_raw(code)
@@ -187,6 +196,7 @@ def parse_code_trees(code_file, code_out_file, lb=None):
         parse_trees.append(p_tree)
 
     serialize_to_file(codes, code_out_file)
+    serialize_to_file(raw_codes, raw_code_out_file)
     return parse_trees
 
 

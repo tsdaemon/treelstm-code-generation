@@ -98,6 +98,7 @@ class Dataset(data.Dataset):
     def load_queries(self, data_dir, file_name, syntax):
         parents_file = os.path.join(data_dir, '{}.in.{}_parents'.format(file_name, parents_prefix[syntax]))
         tokens_file = os.path.join(data_dir, '{}.in.tokens'.format(file_name))
+        strmap_file = os.path.join(data_dir, '{}.in.strmap.bin'.format(file_name))
 
         logging.info('Reading query trees...')
         self.query_trees, self.errors = self.read_query_trees(parents_file)
@@ -105,6 +106,14 @@ class Dataset(data.Dataset):
 
         logging.info('Reading query tokens...')
         self.queries, self.query_tokens = self.read_query(tokens_file)
+
+        if os.path.exists(strmap_file):
+            logging.info('Reading strmap...')
+            self.strmap = self.read_strmap(strmap_file)
+
+    def read_strmap(self, file):
+        strmap = deserialize_from_file(file)
+        return filter_by_ids(strmap, self.errors)
 
     def read_query(self, filename):
         with open(filename, 'r', encoding='utf-8') as f:
