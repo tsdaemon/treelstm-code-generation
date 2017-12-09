@@ -130,16 +130,13 @@ class Trainer(object):
 
     def validate(self, dataset, epoch, out_dir):
         self.model.eval()
-        cum_bleu, cum_acc, cum_oracle_bleu, cum_oracle_acc = 0.0, 0.0, 0.0, 0.0
+        cum_bleu, cum_acc = 0.0, 0.0
         errors = 0
-        # all_references, all_predictions = [], []
 
         for idx in tqdm(range(len(dataset)), desc='Testing epoch '+str(epoch+1)+''):
-            enc_tree, query, query_tokens, str_map, \
-            _, _, _, _, _, \
-            ref_code, ref_code_raw, ref_code_tree = dataset[idx]
+            data_entry = dataset[idx]
 
-            cand_list = self.model(enc_tree, query, query_tokens)
+            cand_list = self.model(data_entry['query_tree'], data_entry['query'], data_entry['query_tokens'])
             candidats = []
             for cid, cand in enumerate(cand_list[:self.config.beam_size]):
                 try:
@@ -149,37 +146,16 @@ class Trainer(object):
                 except:
                     logging.debug("Exception in converting tree to code:"
                                   "id: {}, beam pos: {}".format(idx, cid))
-                    if cid == 0:
-                        errors += 1
+                    errors += 1
+            if candidats > 0:
+                bleu, acc = evaluate_decode_result(data_entry, idx, candidats[0], out_dir)
 
-            bleu, oracle_bleu, acc, oracle_acc, \
-            refer_tokens_for_bleu, pred_tokens_for_bleu = evaluate_decode_result(
-                (enc_tree, query, query_tokens, str_map, ref_code_tree, ref_code_raw, ref_code),
-                idx, candidats, out_dir)
-
-            if len(candidats) == 0:
-                errors += 1
-
-            cum_bleu += bleu
-            cum_oracle_bleu += oracle_bleu
-            cum_acc += acc
-
-            # all_references.append([refer_tokens_for_bleu])
-            # all_predictions.append(pred_tokens_for_bleu)
+                cum_bleu += bleu
+                cum_acc += acc
 
         cum_bleu /= len(dataset)
         cum_acc /= len(dataset)
-        cum_oracle_bleu /= len(dataset)
-        cum_oracle_acc /= len(dataset)
-        errors /= len(dataset)
-
-        # logging.info('corpus level bleu: %f',
-        #              corpus_bleu(all_references, all_predictions,
-        #                          smoothing_function=SmoothingFunction().method3))
-        # logging.info('sentence level bleu: %f', cum_bleu)
-        # logging.info('accuracy: %f', cum_acc)
-        # logging.info('oracle bleu: %f', cum_oracle_bleu)
-        # logging.info('oracle accuracy: %f', cum_oracle_acc)
+        errors /= (len(dataset) * self.config.beam_size)
 
         return cum_bleu, cum_acc, errors
 

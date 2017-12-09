@@ -172,7 +172,7 @@ def parse_code_trees(code_file, strmap_file, code_out_file, raw_code_out_file, l
         line = line.strip().replace('    ', '\t')
         if lb is not None:
             line = line.replace(lb, '\n')
-        code = line.replace('    ', '\t')
+        code = line
 
         raw_code = code
         raw_codes.append(raw_code)
@@ -183,17 +183,20 @@ def parse_code_trees(code_file, strmap_file, code_out_file, raw_code_out_file, l
 
         codes.append(code)
 
-        p_tree = parse_raw(code)
-        # sanity check
-        pred_ast = parse_tree_to_python_ast(p_tree)
-        pred_code = astor.to_source(pred_ast)
-        ref_ast = ast.parse(code)
-        ref_code = astor.to_source(ref_ast)
+        try:
+            p_tree = parse_raw(code)
+            # sanity check
+            pred_ast = parse_tree_to_python_ast(p_tree)
+            pred_code = astor.to_source(pred_ast)
+            ref_ast = ast.parse(code)
+            ref_code = astor.to_source(ref_ast)
 
-        if pred_code != ref_code:
-            raise RuntimeError('code mismatch!')
+            if pred_code != ref_code:
+                raise RuntimeError('code mismatch!')
 
-        parse_trees.append(p_tree)
+            parse_trees.append(p_tree)
+        except:
+            parse_trees.append(None)
 
     serialize_to_file(codes, code_out_file)
     serialize_to_file(raw_codes, raw_code_out_file)
