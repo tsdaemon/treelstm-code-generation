@@ -219,6 +219,7 @@ def write_terminal_tokens_vocab(grammar, parse_trees, out_file, min_freq=2):
     terminal_token_seq = []
 
     for parse_tree in tqdm(parse_trees):
+        if parse_tree is None: continue
         for node in parse_tree.get_leaves():
             if grammar.is_value_node(node):
                 terminal_val = node.value
