@@ -79,7 +79,6 @@ class Dataset(data.Dataset):
             size_next = list(seq.size()[1:])
             size_pad = [size_0] + size_next
             pads = torch.LongTensor(*size_pad)
-            print(seq.is_cuda)
             if seq.is_cuda:
                 pads = pads.cuda()
             pads = pads.fill_(pad_item)
@@ -267,7 +266,8 @@ class Dataset(data.Dataset):
 
     def prepare_torch(self, cuda):
         if cuda:
-            self.queries = [q.cuda() for q in self.queries]
+            for data_entry in self.data_entries:
+                data_entry["query"] = data_entry["query"].cuda()
             self.tgt_node_seq = self.tgt_node_seq.cuda()
             self.tgt_par_rule_seq = self.tgt_par_rule_seq.cuda()
             self.tgt_par_t_seq = self.tgt_par_t_seq.cuda()
