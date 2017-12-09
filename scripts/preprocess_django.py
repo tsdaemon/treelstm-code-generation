@@ -36,56 +36,56 @@ if __name__ == '__main__':
     dj_source_dir = './data/en-django/'
     dj_dir = './preprocessed/django/'
 
-    # if os.path.exists(dj_dir):
-    #     shutil.rmtree(dj_dir)
-    # os.makedirs(dj_dir)
+    if os.path.exists(dj_dir):
+        shutil.rmtree(dj_dir)
+    os.makedirs(dj_dir)
 
     train_dir = os.path.join(dj_dir, 'train')
     dev_dir = os.path.join(dj_dir, 'dev')
     test_dir = os.path.join(dj_dir, 'test')
     make_dirs([train_dir, dev_dir, test_dir])
 
-    # shutil.copy(os.path.join(dj_source_dir, 'all.anno'), os.path.join(dj_dir, 'all.anno'))
-    # shutil.copy(os.path.join(dj_source_dir, 'all.code'), os.path.join(dj_dir, 'all.code'))
-    #
-    # logging.info('Splitting dataset')
-    # split_file(os.path.join(dj_dir, 'all.anno'), train_dir, dev_dir, test_dir, 'in')
-    # split_file(os.path.join(dj_dir, 'all.code'), train_dir, dev_dir, test_dir, 'out')
-    #
-    # logging.info('Tokenizing')
-    # tokenize_with_str_map(os.path.join(dev_dir, 'dev.in'),
-    #                       os.path.join(dev_dir, 'dev.in.tokens'),
-    #                       os.path.join(dev_dir, 'dev.in.strmap.bin'))
-    # tokenize_with_str_map(os.path.join(train_dir, 'train.in'),
-    #                       os.path.join(train_dir, 'train.in.tokens'),
-    #                       os.path.join(train_dir, 'train.in.strmap.bin'))
-    # tokenize_with_str_map(os.path.join(test_dir, 'test.in'),
-    #                       os.path.join(test_dir, 'test.in.tokens'),
-    #                       os.path.join(test_dir, 'test.in.strmap.bin'))
-    #
-    # logging.info('Building vocabulary')
-    # vocab = build_vocab_from_token_files(glob.glob(os.path.join(dj_dir, '*/*.tokens')), min_frequency=3)
-    # save_vocab(os.path.join(dj_dir, 'vocab.txt'), vocab)
-    #
-    # logging.info('Build vocab embeddings')
-    # vocab = Vocab(filename=os.path.join(dj_dir, 'vocab.txt'),
-    #               data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
-    # emb_file = os.path.join(dj_dir, 'word_embeddings.pth')
-    # glove_file = os.path.join(data_dir, 'glove/glove.840B.300d')
-    # glove_vocab, glove_emb = load_word_vectors(glove_file)
-    # emb = torch.Tensor(vocab.size(), glove_emb.size(1)).normal_(0.0, 0.1)
-    #
-    # for idx, item in enumerate([Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD]):
-    #     emb[idx].zero_()
-    # for word in vocab.labelToIdx.keys():
-    #     if glove_vocab.getIndex(word):
-    #         emb[vocab.getIndex(word)] = glove_emb[glove_vocab.getIndex(word)]
-    # torch.save(emb, emb_file)
-    #
-    # logging.info('Parsing descriptions trees')
-    # parse(os.path.join(dev_dir, 'dev.in.tokens'))
-    # parse(os.path.join(train_dir, 'train.in.tokens'))
-    # parse(os.path.join(test_dir, 'test.in.tokens'))
+    shutil.copy(os.path.join(dj_source_dir, 'all.anno'), os.path.join(dj_dir, 'all.anno'))
+    shutil.copy(os.path.join(dj_source_dir, 'all.code'), os.path.join(dj_dir, 'all.code'))
+
+    logging.info('Splitting dataset')
+    split_file(os.path.join(dj_dir, 'all.anno'), train_dir, dev_dir, test_dir, 'in')
+    split_file(os.path.join(dj_dir, 'all.code'), train_dir, dev_dir, test_dir, 'out')
+
+    logging.info('Tokenizing')
+    tokenize_with_str_map(os.path.join(dev_dir, 'dev.in'),
+                          os.path.join(dev_dir, 'dev.in.tokens'),
+                          os.path.join(dev_dir, 'dev.in.strmap.bin'))
+    tokenize_with_str_map(os.path.join(train_dir, 'train.in'),
+                          os.path.join(train_dir, 'train.in.tokens'),
+                          os.path.join(train_dir, 'train.in.strmap.bin'))
+    tokenize_with_str_map(os.path.join(test_dir, 'test.in'),
+                          os.path.join(test_dir, 'test.in.tokens'),
+                          os.path.join(test_dir, 'test.in.strmap.bin'))
+
+    logging.info('Building vocabulary')
+    vocab = build_vocab_from_token_files(glob.glob(os.path.join(dj_dir, '*/*.tokens')), min_frequency=3)
+    save_vocab(os.path.join(dj_dir, 'vocab.txt'), vocab)
+
+    logging.info('Build vocab embeddings')
+    vocab = Vocab(filename=os.path.join(dj_dir, 'vocab.txt'),
+                  data=[Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD])
+    emb_file = os.path.join(dj_dir, 'word_embeddings.pth')
+    glove_file = os.path.join(data_dir, 'glove/glove.840B.300d')
+    glove_vocab, glove_emb = load_word_vectors(glove_file)
+    emb = torch.Tensor(vocab.size(), glove_emb.size(1)).normal_(0.0, 0.1)
+
+    for idx, item in enumerate([Constants.UNK_WORD, Constants.EOS_WORD, Constants.PAD_WORD]):
+        emb[idx].zero_()
+    for word in vocab.labelToIdx.keys():
+        if glove_vocab.getIndex(word):
+            emb[vocab.getIndex(word)] = glove_emb[glove_vocab.getIndex(word)]
+    torch.save(emb, emb_file)
+
+    logging.info('Parsing descriptions trees')
+    parse(os.path.join(dev_dir, 'dev.in.tokens'))
+    parse(os.path.join(train_dir, 'train.in.tokens'))
+    parse(os.path.join(test_dir, 'test.in.tokens'))
 
     logging.info('Parsing output code')
     parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'),

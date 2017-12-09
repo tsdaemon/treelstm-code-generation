@@ -2,7 +2,6 @@ import os
 import ast
 import numpy as np
 
-from natural_lang.tree import *
 from config import parser
 from utils.io import deserialize_from_file
 
@@ -76,28 +75,6 @@ def collect_description_stats(data_dir):
     return tokens_avg, tokens_max, lens
 
 
-def read_line_from_file(file, line):
-    with open(file, 'r') as f:
-        _ = [f.readline() for _ in range(line)]
-        return f.readline()
-
-
-def draw_tree(parents_path, cat_path, token_path, line, out_path):
-    hs_tree_line = read_line_from_file(parents_path, line)
-    hs_tokens = read_line_from_file(token_path, line).split()
-    hs_categories = read_line_from_file(cat_path, line).split()
-
-    hs_labels = []
-    for i in range(len(hs_categories)):
-        label = hs_categories[i]
-        if len(hs_tokens) > i and label != hs_tokens[i]:
-            label += ' - ' + hs_tokens[i]
-        hs_labels.append(label)
-
-    hs_tree = read_tree(hs_tree_line, hs_labels)
-    hs_tree.savefig(out_path)
-
-
 def number_of_empty_lines(file):
     with open(file, 'r') as f:
         lines = f.readlines()
@@ -111,27 +88,6 @@ def num_syntax_parse_errors(data_dir, parents):
         empty_lines = number_of_empty_lines(file)
         errors += empty_lines
     return errors
-
-
-def draw_trees(data_dir, line):
-    hs_tree_path = os.path.join(data_dir, 'dev/dev.in.constituency_parents')
-    hs_category_path = os.path.join(data_dir, 'dev/dev.in.constituency_categories')
-    hs_tokens_path = os.path.join(data_dir, 'dev/dev.in.tokens')
-    out_path = os.path.join(data_dir, 'dev/pcfg_tree_example.png')
-
-    draw_tree(hs_tree_path, hs_category_path, hs_tokens_path, line, out_path)
-
-    hs_tree_path = os.path.join(data_dir, 'dev/dev.in.dependency_parents')
-    hs_category_path = os.path.join(data_dir, 'dev/dev.in.dependency_rels')
-    out_path = os.path.join(data_dir, 'dev/dependency_tree_example.png')
-
-    draw_tree(hs_tree_path, hs_category_path, hs_tokens_path, line, out_path)
-
-    hs_tree_path = os.path.join(data_dir, 'dev/dev.in.ccg_parents')
-    hs_category_path = os.path.join(data_dir, 'dev/dev.in.ccg_categories')
-    out_path = os.path.join(data_dir, 'dev/ccg_tree_example.png')
-
-    draw_tree(hs_tree_path, hs_category_path, hs_tokens_path, line, out_path)
 
 
 def avg_nodes_dataset(data_dir, parents):
@@ -149,7 +105,6 @@ def avg_nodes_dataset(data_dir, parents):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    # draw_trees(args.data_dir)
 
     tokens_avg, tokens_max, lens = collect_description_stats(args.data_dir)
     print("Avg. tokens: {},\n"

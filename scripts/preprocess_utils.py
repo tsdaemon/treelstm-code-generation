@@ -291,7 +291,7 @@ def tokenize_and_strmap_query(query):
         new_query_tokens.append(token)
         i = token.find('.')
         if 0 < i < len(token) - 1:
-            new_tokens = ['['] + token.replace('.', ' . ').split(' ') + [']']
+            new_tokens = ['('] + token.replace('.', ' ').split(' ') + [')']
             new_query_tokens.extend(new_tokens)
 
     return new_query_tokens, str_map
