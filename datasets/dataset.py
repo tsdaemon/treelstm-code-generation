@@ -18,7 +18,7 @@ parents_prefix = {
 
 
 def any_is_none(*seq):
-    return any(map(lambda x: x is None), seq)
+    return any(map(lambda x: x is None, seq))
 
 
 class Dataset(data.Dataset):
@@ -95,7 +95,6 @@ class Dataset(data.Dataset):
 
         logging.info('Reading query trees...')
         self.query_trees = self.read_query_trees(parents_file)
-        logging.debug('Empty trees: {}.'.format(len(self.errors)))
 
         logging.info('Reading query tokens...')
         self.queries, self.query_tokens = self.read_query(tokens_file)
@@ -277,11 +276,11 @@ class Dataset(data.Dataset):
     def prepare_data_entries(self):
         data_entries = []
         for query_tree, query, query_tokens, str_map, code, code_raw, code_tree, actions in \
-                zip(self.query_trees, self.queries, self.query_tokens, self.strmaps, self.code, self.code_raw, self.code_trees, self.actions):
+                zip(self.query_trees, self.queries, self.query_tokens, self.strmaps, self.codes, self.codes_raw, self.code_trees, self.actions):
             if any_is_none(query_tree, query, query_tokens, str_map, code, code_raw, code_tree, actions):
                 continue
             data_entry = {
-                "tree": query_tree,
+                "query_tree": query_tree,
                 "query": query,
                 "query_tokens": query_tokens,
                 "str_map": str_map,
@@ -291,7 +290,7 @@ class Dataset(data.Dataset):
                 "actions": actions
             }
             data_entries.append(data_entry)
-        return data_entry
+        return data_entries
 
 
 

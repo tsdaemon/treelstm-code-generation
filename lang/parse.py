@@ -286,6 +286,8 @@ def get_grammar(parse_trees):
 
     print("Generating grammar from parse trees...")
     for parse_tree in tqdm(parse_trees):
+        if parse_tree is None: continue
+
         parse_tree_rules, rule_parents = parse_tree.get_productions()
         for rule in parse_tree_rules:
             rules.add(rule)
