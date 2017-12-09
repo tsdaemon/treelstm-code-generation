@@ -274,7 +274,7 @@ def tokenize_and_strmap_query(query):
         if str_literal in ['\'%s\'', '\"%s\"']:
             continue
 
-        str_repr = '_STR:%d_' % str_count
+        str_repr = '_STR_%d_' % str_count
         str_map[str_literal] = str_repr
 
         query = query.replace(str_literal, str_repr)
