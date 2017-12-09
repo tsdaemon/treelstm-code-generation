@@ -36,6 +36,9 @@ class Grammar(object):
         assert len(root_node) == 1
         self.root_node = next(iter(root_node))
 
+        self.terminal_nodes = rhs_nodes - lhs_nodes
+        self.terminal_types = set([n.type for n in self.terminal_nodes])
+
         self.node_type_to_id = OrderedDict()
         for i, type in enumerate(node_types, start=0):
             self.node_type_to_id[type] = i
