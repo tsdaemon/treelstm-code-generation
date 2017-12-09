@@ -147,7 +147,7 @@ class Trainer(object):
                     logging.debug("Exception in converting tree to code:"
                                   "id: {}, beam pos: {}".format(idx, cid))
                     errors += 1
-            if candidats > 0:
+            if len(candidats) > 0:
                 bleu, acc = evaluate_decode_result(data_entry, idx, candidats[0], out_dir)
 
                 cum_bleu += bleu
