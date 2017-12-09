@@ -14,6 +14,7 @@ def init_logging(file_name):
     logging.getLogger().handlers = []
     logging.getLogger().addHandler(ch)
     logging.getLogger().addHandler(fh)
+    logging.getLogger().setLevel(logging.INFO)
 
     logging.info('init logging file [%s]' % file_name)
 

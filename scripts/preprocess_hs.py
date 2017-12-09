@@ -130,15 +130,15 @@ if __name__ == '__main__':
     parse_trees_dev = parse_code_trees(os.path.join(dev_dir, 'dev.out'),
                                        os.path.join(dev_dir, 'dev.in.strmap.bin'),
                                        os.path.join(dev_dir, 'dev.out.bin'),
-                                       os.path.join(dev_dir, 'dev.out.raw.bin'))
+                                       os.path.join(dev_dir, 'dev.out.raw.bin'), lb=lb)
     parse_trees_train = parse_code_trees(os.path.join(train_dir, 'train.out'),
                                          os.path.join(train_dir, 'train.in.strmap.bin'),
                                          os.path.join(train_dir, 'train.out.bin'),
-                                         os.path.join(train_dir, 'train.out.raw.bin'))
+                                         os.path.join(train_dir, 'train.out.raw.bin'), lb=lb)
     parse_trees_test = parse_code_trees(os.path.join(test_dir, 'test.out'),
                                         os.path.join(test_dir, 'test.in.strmap.bin'),
                                         os.path.join(test_dir, 'test.out.bin'),
-                                        os.path.join(test_dir, 'test.out.raw.bin'))
+                                        os.path.join(test_dir, 'test.out.raw.bin'), lb=lb)
     parse_trees = parse_trees_dev+parse_trees_train+parse_trees_test
 
     logging.info('Saving trees')

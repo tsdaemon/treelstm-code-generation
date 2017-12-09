@@ -55,6 +55,7 @@ class Dataset(data.Dataset):
 
     def __getitem__(self, index):
         enc_tree = deepcopy(self.query_trees[index])
+        str_map = deepcopy(self.strmaps[index])
 
         query = self.queries[index]
         query = self.fix_seq_length_one(query, enc_tree.size(), Constants.PAD)
@@ -68,11 +69,12 @@ class Dataset(data.Dataset):
         tgt_action_seq_type = self.tgt_action_seq_type[index]
 
         code = deepcopy(self.codes[index])
+        code_raw = deepcopy(self.codes[index])
         code_tree = deepcopy(self.code_trees[index])
 
-        return enc_tree, query, query_tokens, \
+        return enc_tree, query, query_tokens, str_map, \
                tgt_node_seq, tgt_par_rule_seq, tgt_par_t_seq, tgt_action_seq, tgt_action_seq_type, \
-               code, code_tree
+               code, code_raw, code_tree
 
     def get_batch(self, indices):
         trees = [deepcopy(self.query_trees[index]) for index in indices]
@@ -107,9 +109,8 @@ class Dataset(data.Dataset):
         logging.info('Reading query tokens...')
         self.queries, self.query_tokens = self.read_query(tokens_file)
 
-        if os.path.exists(strmap_file):
-            logging.info('Reading strmap...')
-            self.strmap = self.read_strmap(strmap_file)
+        logging.info('Reading strmap...')
+        self.strmaps = self.read_strmap(strmap_file)
 
     def read_strmap(self, file):
         strmap = deserialize_from_file(file)
@@ -166,9 +167,11 @@ class Dataset(data.Dataset):
 
         trees_file = os.path.join(data_dir, trees_file)
         code_file = os.path.join(data_dir, '{}.out.bin'.format(file_name))
+        code_raw_file = os.path.join(data_dir, '{}.out.raw.bin'.format(file_name))
         # filter errors
         self.code_trees = filter_by_ids(deserialize_from_file(trees_file), self.errors)
         self.codes = filter_by_ids(deserialize_from_file(code_file), self.errors)
+        self.codes_raw = filter_by_ids(deserialize_from_file(code_raw_file), self.errors)
 
         logging.info('Constructing code representation...')
         self.actions = []

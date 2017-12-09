@@ -135,9 +135,9 @@ class Trainer(object):
         # all_references, all_predictions = [], []
 
         for idx in tqdm(range(len(dataset)), desc='Testing epoch '+str(epoch+1)+''):
-            enc_tree, query, query_tokens, \
+            enc_tree, query, query_tokens, str_map, \
             _, _, _, _, _, \
-            ref_code, ref_code_tree = dataset[idx]
+            ref_code, ref_code_raw, ref_code_tree = dataset[idx]
 
             cand_list = self.model(enc_tree, query, query_tokens)
             candidats = []
@@ -154,8 +154,8 @@ class Trainer(object):
 
             bleu, oracle_bleu, acc, oracle_acc, \
             refer_tokens_for_bleu, pred_tokens_for_bleu = evaluate_decode_result(
-                (enc_tree, query, query_tokens, ref_code_tree, ref_code),
-                idx, candidats, out_dir, self.config.dataset)
+                (enc_tree, query, query_tokens, str_map, ref_code_tree, ref_code_raw, ref_code),
+                idx, candidats, out_dir)
 
             if len(candidats) == 0:
                 errors += 1

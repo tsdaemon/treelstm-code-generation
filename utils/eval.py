@@ -5,7 +5,7 @@ import ast
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 import astor
 
-from lang.parse import tokenize_code
+from lang.parse import tokenize_code, de_canonicalize_code
 
 
 def tokenize_for_bleu_eval(code):
@@ -22,10 +22,9 @@ def tokenize_for_bleu_eval(code):
 def evaluate_decode_result(data,
                            result_id,
                            decode_candidats,
-                           out_dir,
-                           data_type):
+                           out_dir):
 
-    enc_tree, query, query_tokens, ref_code_tree, ref_code = data
+    enc_tree, query, query_tokens, str_map, ref_code_tree, ref_code_raw, ref_code = data
 
     f = open(os.path.join(out_dir, 'exact_match.txt'), 'a')
     exact_match_ids = []
@@ -76,16 +75,15 @@ def evaluate_decode_result(data,
         f.write('-' * 60 + '\n')
 
     # if data_type == 'django':
-    #     ref_code_for_bleu = example.meta_data['raw_code']
-    #     pred_code_for_bleu = de_canonicalize_code(code, example.meta_data['raw_code'])
-    #     # ref_code_for_bleu = de_canonicalize_code(ref_code_for_bleu, example.meta_data['raw_code'])
-    #     # convert canonicalized code to raw code
-    #     for literal, place_holder in example.meta_data['str_map'].iteritems():
-    #         pred_code_for_bleu = pred_code_for_bleu.replace('\'' + place_holder + '\'', literal)
-    #         # ref_code_for_bleu = ref_code_for_bleu.replace('\'' + place_holder + '\'', literal)
+    ref_code_for_bleu = ref_code_raw
+    pred_code_for_bleu = de_canonicalize_code(code, ref_code_raw)
+    for literal, place_holder in str_map.items():
+        pred_code_for_bleu = pred_code_for_bleu.replace('\'' + place_holder + '\'', literal)
+        # ref_code_for_bleu = ref_code_for_bleu.replace('\'' + place_holder + '\'', literal)
+
     # elif config.data_type == 'hs':
-    ref_code_for_bleu = ref_code
-    pred_code_for_bleu = code
+    # ref_code_for_bleu = ref_code
+    # pred_code_for_bleu = code
 
     # we apply Ling Wang's trick when evaluating BLEU scores
     refer_tokens_for_bleu = tokenize_for_bleu_eval(ref_code_for_bleu)
@@ -112,7 +110,7 @@ def evaluate_decode_result(data,
     ngram_weights = [0.25] * min(4, len(refer_tokens_for_bleu))
     bleu = sentence_bleu([refer_tokens_for_bleu], pred_tokens_for_bleu, weights=ngram_weights, smoothing_function=sm.method3)
 
-    #logging.info('raw_id: {}, bleu_score: {}'.format(result_id, bleu))
+    # logging.info('raw_id: {}, bleu_score: {}'.format(result_id, bleu))
 
     f_decode.write('-' * 60 + '\n')
     f_decode.write('example_id: %d\n' % result_id)
@@ -152,12 +150,12 @@ def evaluate_decode_result(data,
                 cur_oracle_acc = 1
 
             # if config.data_type == 'django':
-            #     pred_code_for_bleu = de_canonicalize_code(code, example.meta_data['raw_code'])
-            #     # convert canonicalized code to raw code
-            #     for literal, place_holder in example.meta_data['str_map'].iteritems():
-            #         pred_code_for_bleu = pred_code_for_bleu.replace('\'' + place_holder + '\'', literal)
+            pred_code_for_bleu = de_canonicalize_code(code, ref_code_raw)
+            # convert canonicalized code to raw code
+            for literal, place_holder in str_map.items():
+                pred_code_for_bleu = pred_code_for_bleu.replace('\'' + place_holder + '\'', literal)
             # elif config.data_type == 'hs':
-            pred_code_for_bleu = code
+            # pred_code_for_bleu = code
 
             # we apply Ling Wang's trick when evaluating BLEU scores
             pred_tokens_for_bleu = tokenize_for_bleu_eval(pred_code_for_bleu)
