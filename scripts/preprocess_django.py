@@ -36,9 +36,9 @@ if __name__ == '__main__':
     dj_source_dir = './data/en-django/'
     dj_dir = './preprocessed/django/'
 
-    # if os.path.exists(dj_dir):
-    #     shutil.rmtree(dj_dir)
-    # os.makedirs(dj_dir)
+    if os.path.exists(dj_dir):
+        shutil.rmtree(dj_dir)
+    os.makedirs(dj_dir)
 
     train_dir = os.path.join(dj_dir, 'train')
     dev_dir = os.path.join(dj_dir, 'dev')
