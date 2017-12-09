@@ -53,9 +53,15 @@ if __name__ == '__main__':
     split_file(os.path.join(dj_dir, 'all.code'), train_dir, dev_dir, test_dir, 'out')
 
     logging.info('Tokenizing')
-    tokenize(os.path.join(dev_dir, 'dev.in'), os.path.join(dev_dir, 'dev.in.tokens'))
-    tokenize(os.path.join(train_dir, 'train.in'), os.path.join(train_dir, 'train.in.tokens'))
-    tokenize(os.path.join(test_dir, 'test.in'), os.path.join(test_dir, 'test.in.tokens'))
+    tokenize_with_str_map(os.path.join(dev_dir, 'dev.in'),
+                          os.path.join(dev_dir, 'dev.in.tokens'),
+                          os.path.join(dev_dir, 'dev.in.strmap.bin'))
+    tokenize_with_str_map(os.path.join(train_dir, 'train.in'),
+                          os.path.join(train_dir, 'train.in.tokens'),
+                          os.path.join(train_dir, 'train.in.strmap.bin'))
+    tokenize_with_str_map(os.path.join(test_dir, 'test.in'),
+                          os.path.join(test_dir, 'test.in.tokens'),
+                          os.path.join(test_dir, 'test.in.strmap.bin'))
 
     logging.info('Building vocabulary')
     vocab = build_vocab_from_token_files(glob.glob(os.path.join(dj_dir, '*/*.tokens')), min_frequency=3)

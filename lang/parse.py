@@ -11,7 +11,6 @@ from lang.grammar import is_compositional_leaf, NODE_FIELD_BLACK_LIST, PythonGra
 from lang.grammar36 import PY_AST_NODE_FIELDS
 from lang.util import typename
 from lang.unaryclosure import compressed_ast_to_normal
-from utils.general import init_logging
 
 
 def python_ast_to_parse_tree(node):
@@ -360,66 +359,3 @@ def get_terminal_tokens(_terminal_str):
             _terminal_tokens.append(' ')
 
         return _terminal_tokens[:-1]
-
-
-if __name__ == '__main__':
-    init_logging('misc.log')
-
-    # django_code_file = '/Users/yinpengcheng/Research/SemanticParsing/CodeGeneration/en-django/all.code'
-    #
-    # grammar, parse_trees = extract_grammar(django_code_file)
-    # id = 1888
-    # parse_tree = parse_trees[id]
-    # print parse_tree
-    # from components import Hyp
-    # hyp = Hyp(grammar)
-    # rules, rule_parents = parse_tree.get_productions()
-    #
-    # while hyp.frontier_nt():
-    #     nt = hyp.frontier_nt()
-    #     if grammar.is_value_node(nt):
-    #         hyp.append_token('111<eos>')
-    #     else:
-    #         rule = rules[0]
-    #         hyp.apply_rule(rule)
-    #         del rules[0]
-    #
-    # print hyp
-    #
-    # ast_tree = decode_tree_to_python_ast(hyp.tree)
-    # source = astor.to_source(ast_tree)
-    # print source
-
-    # for code in open(django_code_file):
-    #     code = code.strip()
-    #     ref_ast_tree = ast.parse(canonicalize_code(code)).body[0]
-    #     parse_tree = parse(code)
-    #     ast_tree = parse_tree_to_python_ast(parse_tree)
-    #     source1 = astor.to_source(ast_tree)
-    #     source2 = astor.to_source(ref_ast_tree)
-    #
-    #     if source1 != source2:
-    #         pass
-
-    code = """
-class Demonwrath(SpellCard):
-    def __init__(self):
-        super().__init__("Demonwrath", 3, CHARACTER_CLASS.WARLOCK, CARD_RARITY.RARE)
-
-    def use(self, player, game):
-        super().use(player, game)
-        targets = copy.copy(game.other_player.minions)
-        targets.extend(game.current_player.minions)
-        for minion in targets:
-            if minion.card.minion_type is not MINION_TYPE.DEMON:
-                minion.damage(player.effective_spell_damage(2), self)
-"""
-    code = """sorted(mydict, key=mydict.get, reverse=True)"""
-    # # code = """a = [1,2,3,4,'asdf', 234.3]"""
-    parse_tree = parse_code(code)
-    # for leaf in parse_tree.get_leaves():
-    #     if leaf.value: print escape(leaf.value)
-    #
-    print(parse_tree)
-    # ast_tree = parse_tree_to_python_ast(parse_tree)
-    # print astor.to_source(ast_tree)

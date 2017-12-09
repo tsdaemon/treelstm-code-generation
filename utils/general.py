@@ -1,18 +1,19 @@
 import logging
 
 
-def init_logging(file_name, level=logging.INFO):
+def init_logging(file_name):
     formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(module)s: %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
     fh = logging.FileHandler(file_name)
-    ch = logging.StreamHandler()
-
     fh.setFormatter(formatter)
+    fh.setLevel(logging.DEBUG)
+
+    ch = logging.StreamHandler()
     ch.setFormatter(formatter)
+    ch.setLevel(logging.INFO)
 
     logging.getLogger().handlers = []
     logging.getLogger().addHandler(ch)
     logging.getLogger().addHandler(fh)
-    logging.getLogger().setLevel(level)
 
     logging.info('init logging file [%s]' % file_name)
 

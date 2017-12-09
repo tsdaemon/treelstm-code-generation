@@ -33,7 +33,7 @@ if __name__ == '__main__':
         os.makedirs(args.output_dir)
 
     # start logging
-    init_logging(os.path.join(args.output_dir, 'parser.log'), logging.INFO)
+    init_logging(os.path.join(args.output_dir, 'parser.log'))
     logging.info('command line: %s', ' '.join(sys.argv))
     logging.info('current config: %s', args)
     logging.info('loading dataset [%s]', args.dataset)
