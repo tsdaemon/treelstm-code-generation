@@ -87,6 +87,7 @@ def extract_unary_closure(parse_tree):
 def get_top_unary_closures(parse_trees, k=20, freq=50):
     unary_links_counter = Counter()
     for parse_tree in parse_trees:
+        if parse_tree is None: continue
         example_unary_links = extract_unary_closure(parse_tree)
         for link in example_unary_links:
             unary_links_counter[link] += 1
