@@ -79,6 +79,7 @@ class Dataset(data.Dataset):
             size_next = list(seq.size()[1:])
             size_pad = [size_0] + size_next
             pads = torch.LongTensor(*size_pad)
+            print(seq.is_cuda)
             if seq.is_cuda:
                 pads = pads.cuda()
             pads = pads.fill_(pad_item)
