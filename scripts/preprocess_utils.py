@@ -238,6 +238,7 @@ def do_unary_closures(parse_trees, k):
     logging.info('Applying unary closures to parse trees...')
     unary_closures = get_top_unary_closures(parse_trees, k=k)
     for parse_tree in tqdm(parse_trees):
+        if parse_tree is None: continue
         apply_unary_closures(parse_tree, unary_closures)
 
 
