@@ -51,7 +51,7 @@ class Dataset(data.Dataset):
     def get_batch(self, indices):
         data_entries = [self.data_entries[index] for index in indices]
         trees = [deepcopy(data_entry['query_tree']) for data_entry in data_entries]
-        queries = [deepcopy(data_entry['query']) for data_entry in data_entries]
+        queries = [data_entry['query'] for data_entry in data_entries]
         max_tree_length = max([tree.size() for tree in trees])
 
         queries = torch.stack(self.fix_seq_length(queries, max_tree_length, Constants.PAD))
