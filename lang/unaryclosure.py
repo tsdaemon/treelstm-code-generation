@@ -104,7 +104,7 @@ def get_top_unary_closures(parse_trees, k=20, freq=50):
     for link in unary_links:
         unary_closures.append(unary_link_to_closure(link))
 
-    unary_closures = zip(unary_links, unary_closures)
+    unary_closures = list(zip(unary_links, unary_closures))
 
     for link, closure in unary_closures:
         logging.debug('link: %s ||| closure: %s ||| freq: %d' % (link, closure, unary_links_counter[link]))
