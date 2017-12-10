@@ -21,7 +21,7 @@ parser.add_argument('-ptrnet_hidden_dim', default=50, type=int)
 
 # encoder
 parser.add_argument('-encoder', default='recursive-lstm', choices=['recursive-lstm', 'bi-lstm', 'bi-lstm-dropout'])
-parser.add_argument('-syntax', default='dependency', choices=['ccg', 'pcfg', 'dependency'])
+parser.add_argument('-syntax', default='ccg', choices=['ccg', 'pcfg', 'dependency'])
 parser.add_argument('-pretrained_embeds', dest='pretrained_embeds', action='store_true')
 parser.add_argument('-no_pretrained_embeds', dest='pretrained_embeds', action='store_false')
 parser.set_defaults(pretrained_embeds=True)
