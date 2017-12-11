@@ -12,3 +12,4 @@ results/
 *.ppk
 *.prof
 push.sh
+*.tar.gz
