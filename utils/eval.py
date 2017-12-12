@@ -37,6 +37,7 @@ def evaluate_decode_result(data_entry,
     f_generated_code = open(os.path.join(out_dir, 'geneated_code.txt'), 'a')
 
     acc = 0.0
+    error = 0.0
     sm = SmoothingFunction()
 
     ref_ast_tree = ast.parse(ref_code).body[0]
@@ -49,6 +50,7 @@ def evaluate_decode_result(data_entry,
     try:
         predict_tokens = tokenize_code(code)
     except:
+        error = 1.0
         logging.info('error in tokenizing [%s]', code)
         predict_tokens = []
 
@@ -102,5 +104,5 @@ def evaluate_decode_result(data_entry,
     f_bleu_eval_hyp.close()
     f_generated_code.close()
 
-    return bleu, acc
+    return bleu, acc, error
 

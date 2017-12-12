@@ -1,7 +1,18 @@
 import networkx as nx
-from networkx.drawing.nx_agraph import graphviz_layout
-from networkx.drawing.nx_pydot import pydot_layout
-import matplotlib.pyplot as plt
+
+
+def _structural_similarity(tree1, tree2):
+    sim = 1
+    length = min(len(tree1.children), len(tree2.children))
+    for i in range(length):
+        sim += _structural_similarity(tree1.children[i], tree2.children[i])
+    return sim
+
+
+def structural_similarity(tree1, tree2):
+    sim = _structural_similarity(tree1, tree2)
+    max_size = max(tree1.size(), tree2.size())
+    return sim/max_size
 
 
 def read_tree(line, labels=None):

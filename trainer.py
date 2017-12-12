@@ -148,10 +148,11 @@ class Trainer(object):
                                   "id: {}, beam pos: {}".format(idx, cid))
                     errors += 1
             if len(candidats) > 0:
-                bleu, acc = evaluate_decode_result(data_entry, idx, candidats[0], out_dir)
+                bleu, acc, error = evaluate_decode_result(data_entry, idx, candidats[0], out_dir)
 
                 cum_bleu += bleu
                 cum_acc += acc
+                # errors += 1
 
         cum_bleu /= len(dataset)
         cum_acc /= len(dataset)
