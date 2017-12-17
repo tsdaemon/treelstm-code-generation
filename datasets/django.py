@@ -53,17 +53,20 @@ def load_dataset(config, force_regenerate=False):
 
         if test is None:
             logging.info('Test dataset not found, generating...')
-            test = Dataset(test_dir, 'test', grammar, vocab, terminal_vocab, config)
+            test = Dataset(test_dir, 'test', grammar, vocab, terminal_vocab,
+                            config.syntax, config.max_example_actions_num, config.unary_closures)
             torch.save(test, test_file)
 
         if dev is None:
             logging.info('Dev dataset not found, generating...')
-            dev = Dataset(dev_dir, 'dev', grammar, vocab, terminal_vocab, config)
+            dev = Dataset(dev_dir, 'dev', grammar, vocab, terminal_vocab,
+                            config.syntax, config.max_example_actions_num, config.unary_closures)
             torch.save(dev, dev_file)
 
         if train is None:
             logging.info('Train dataset not found, generating...')
-            train = Dataset(train_dir, 'train', grammar, vocab, terminal_vocab, config)
+            train = Dataset(train_dir, 'train', grammar, vocab, terminal_vocab,
+                            config.syntax, config.max_example_actions_num, config.unary_closures)
             torch.save(train, train_file)
 
     train.prepare_torch(config.cuda)

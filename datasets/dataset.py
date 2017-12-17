@@ -22,15 +22,17 @@ def any_is_none(*seq):
 
 
 class Dataset(data.Dataset):
-    def __init__(self, data_dir, file_name, grammar, vocab, terminal_vocab, config):
+    def __init__(self, data_dir, file_name, grammar, vocab, terminal_vocab, syntax,
+                 max_example_actions_num, unary_closures):
         super(Dataset, self).__init__()
         self.vocab = vocab
         self.terminal_vocab = terminal_vocab
         self.grammar = grammar
 
-        self.config = config
+        self.max_example_actions_num = max_example_actions_num
+        self.unary_closures = unary_closures
 
-        self.load_input(data_dir, file_name, config.syntax)
+        self.load_input(data_dir, file_name, syntax)
         self.load_output(data_dir, file_name)
 
         self.data_entries = self.prepare_data_entries()
@@ -122,7 +124,7 @@ class Dataset(data.Dataset):
     # output
     def load_output(self, data_dir, file_name):
         logging.info('Reading code files...')
-        if self.config.unary_closures:
+        if self.unary_closures:
             trees_file = '{}.out.trees.uc.bin'.format(file_name)
         else:
             trees_file = '{}.out.trees.bin'.format(file_name)
@@ -209,7 +211,7 @@ class Dataset(data.Dataset):
 
     # preparations
     def prepare_action_matrices(self):
-        max_example_action_num = self.config.max_example_action_num
+        max_example_action_num = self.max_example_action_num
         terminal_vocab = self.terminal_vocab
 
         logging.info('Initializing action matrices...')
