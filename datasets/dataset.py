@@ -23,13 +23,13 @@ def any_is_none(*seq):
 
 class Dataset(data.Dataset):
     def __init__(self, data_dir, file_name, grammar, vocab, terminal_vocab, syntax,
-                 max_example_actions_num, unary_closures):
+                 max_example_action_num, unary_closures):
         super(Dataset, self).__init__()
         self.vocab = vocab
         self.terminal_vocab = terminal_vocab
         self.grammar = grammar
 
-        self.max_example_actions_num = max_example_actions_num
+        self.max_example_action_num = max_example_action_num
         self.unary_closures = unary_closures
 
         self.load_input(data_dir, file_name, syntax)
