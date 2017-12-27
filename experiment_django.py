@@ -61,6 +61,7 @@ if __name__ == '__main__':
     #                "-data_dir ./preprocessed/django", shell=True)
     #
     subprocess.run("python main.py -dataset django -cuda -encoder bi-lstm-dropout "
+                   "-syntax dependency "
                    "-output_dir ./results/django/final/bilstm "
                    "-batch_size 50 "
                    "-no_unary_closures "

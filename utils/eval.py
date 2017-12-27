@@ -80,10 +80,7 @@ def evaluate_decode_result(data_entry,
     f_decode.write('-' * 60 + '\n')
     f_decode.write('example_id: %d\n' % result_id)
     f_decode.write('intent: \n')
-
     f_decode.write(' '.join(query_tokens) + '\n')
-    f_bleu_eval_ref.write(' '.join(refer_tokens_for_bleu) + '\n')
-    f_bleu_eval_hyp.write(' '.join(pred_tokens_for_bleu) + '\n')
     f_decode.write('canonicalized reference: \n')
     f_decode.write(refer_source + '\n')
     f_decode.write('canonicalized prediction: \n')

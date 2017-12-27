@@ -5,6 +5,7 @@ import sys
 import torch
 import torch.optim as optim
 import random
+import shutil
 # from tensorboardX import SummaryWriter
 
 from utils.general import init_logging
@@ -71,20 +72,15 @@ if __name__ == '__main__':
     optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad], lr=args.lr)
     trainer = Trainer(model, args, optimizer)
 
-    # trainer.report_bot(0, 0, 0, 0)
-
     if args.mode == 'train':
         trainer.train_all(train_data, dev_data, test_data, args.output_dir)
     elif args.mode == 'validate':
         tmp_epoch_dir = os.path.join(args.output_dir, 'tmp')
-        if not os.path.exists(tmp_epoch_dir):
-            os.mkdir(tmp_epoch_dir)
-        trainer.validate(test_data, 1, tmp_epoch_dir)
+        if os.path.exists(tmp_epoch_dir):
+            shutil.rmtree(tmp_epoch_dir)
+        os.mkdir(tmp_epoch_dir)
+        trainer.validate(test_data, 0, tmp_epoch_dir)
     elif args.mode == 'start_batch':
         trainer.train(train_data, 0, st_batch=59)
     else:
         raise Exception("Unknown mode!")
-
-    # writer = SummaryWriter()
-    # trainer.visualize(train_data, writer)
-    # writer.close()
