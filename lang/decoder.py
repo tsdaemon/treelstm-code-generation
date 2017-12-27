@@ -1,6 +1,5 @@
 import sys
 import traceback
-from tqdm import tqdm
 import astor
 
 from lang.parse import decode_tree_to_python_ast
@@ -11,7 +10,7 @@ def decode_python_dataset(model, dataset):
     size = len(dataset)
 
     print('Decoding python dataset')
-    for idx in tqdm(range(size)):
+    for idx in range(size):
         enc_tree, dec_tree, input, code = dataset[idx]
         cand_list = model(enc_tree, dec_tree)
 

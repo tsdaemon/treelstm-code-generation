@@ -87,6 +87,11 @@ class Trainer(object):
             bleu, accuracy, errors = self.validate(test_data, -100, dir)
             logging.info('Test set evaluation finished, bleu: {}, accuracy: {}, errors: {}.'.format(
                 bleu, accuracy, errors))
+
+            model_path = os.path.join(dir, 'model.pth')
+            logging.info('Saving model at {}.'.format(model_path))
+            torch.save(self.model, model_path)
+
             report_result = {
                 "Test BLEU": bleu,
                 "Test accuracy": accuracy,

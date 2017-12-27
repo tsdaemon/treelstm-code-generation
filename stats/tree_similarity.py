@@ -1,7 +1,6 @@
 import os
 import random
 import numpy as np
-from tqdm import tqdm
 
 from config import parser
 from natural_lang.tree import *

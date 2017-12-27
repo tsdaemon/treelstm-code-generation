@@ -80,27 +80,3 @@ parser.add_argument('-max_example_action_num', default=200, type=int)
 parser.add_argument('-head_nt_constraint', dest='head_nt_constraint', action='store_true')
 parser.add_argument('-no_head_nt_constraint', dest='head_nt_constraint', action='store_false')
 parser.set_defaults(head_nt_constraint=True)
-
-sub_parsers = parser.add_subparsers(dest='operation', help='operation to take')
-train_parser = sub_parsers.add_parser('train')
-decode_parser = sub_parsers.add_parser('decode')
-interactive_parser = sub_parsers.add_parser('interactive')
-evaluate_parser = sub_parsers.add_parser('evaluate')
-
-# decoding operation
-decode_parser.add_argument('-saveto', default='decode_results.bin')
-decode_parser.add_argument('-type', default='test_data')
-
-# evaluation operation
-evaluate_parser.add_argument('-mode', default='self')
-evaluate_parser.add_argument('-input', default='decode_results.bin')
-evaluate_parser.add_argument('-type', default='test_data')
-evaluate_parser.add_argument('-seq2tree_sample_file', default='model.sample')
-evaluate_parser.add_argument('-seq2tree_id_file', default='test.id.txt')
-evaluate_parser.add_argument('-seq2tree_rareword_map', default=None)
-evaluate_parser.add_argument('-seq2seq_decode_file')
-evaluate_parser.add_argument('-seq2seq_ref_file')
-evaluate_parser.add_argument('-is_nbest', default=False, action='store_true')
-
-# interactive operation
-interactive_parser.add_argument('-mode', default='dataset')
